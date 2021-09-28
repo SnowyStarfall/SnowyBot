@@ -1,0 +1,8 @@
+
+.vs/*
+SnowyBot/obj/*
+SnowyBot/bin/*
+*.json
+/SnowyBot/LavaLink/*
+/SnowyBot/Properties/*
+SnowyBot/SnowyBot.csproj.user
