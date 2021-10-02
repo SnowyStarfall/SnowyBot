@@ -4,7 +4,7 @@ using Discord.WebSocket;
 using SnowyBot.Services;
 using System.Threading.Tasks;
 
-namespace PartyBot.Modules
+namespace SnowyBot.Modules
 {
   public class AudioModule : ModuleBase<SocketCommandContext>
   {

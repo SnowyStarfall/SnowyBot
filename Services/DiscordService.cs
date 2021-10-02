@@ -64,16 +64,8 @@ namespace SnowyBot.Services
 
     private async Task ReadyAsync()
     {
-      try
-      {
-        await _lavaNode.ConnectAsync().ConfigureAwait(false);
-        await _client.SetGameAsync(GlobalData.Config.GameStatus).ConfigureAwait(false);
-      }
-      catch (Exception ex)
-      {
-        await LoggingService.LogInformationAsync(ex.Source, ex.Message).ConfigureAwait(false);
-      }
-
+      await _lavaNode.ConnectAsync().ConfigureAwait(false);
+      await _client.SetGameAsync(GlobalData.Config.GameStatus).ConfigureAwait(false);
     }
 
     private async Task LogAsync(LogMessage logMessage)

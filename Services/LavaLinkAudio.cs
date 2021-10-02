@@ -27,15 +27,8 @@ namespace SnowyBot.Services
       if (voiceState.VoiceChannel is null)
         return await EmbedHandler.CreateErrorEmbed("Join", "You must be connected to a voice channel.").ConfigureAwait(false);
 
-      try
-      {
-        await _lavaNode.JoinAsync(voiceState.VoiceChannel, textChannel).ConfigureAwait(false);
-        return await EmbedHandler.CreateBasicEmbed("Join", $"Connected to {voiceState.VoiceChannel.Name}.", Color.Green).ConfigureAwait(false);
-      }
-      catch (Exception ex)
-      {
-        return await EmbedHandler.CreateErrorEmbed("Join", ex.Message).ConfigureAwait(false);
-      }
+      await _lavaNode.JoinAsync(voiceState.VoiceChannel, textChannel).ConfigureAwait(false);
+      return await EmbedHandler.CreateBasicEmbed("Join", $"Connected to {voiceState.VoiceChannel.Name}.", Color.Green).ConfigureAwait(false);
     }
     public async Task<Embed> PlayAsync(SocketGuildUser user, IGuild guild, string query)
     {
@@ -297,7 +290,7 @@ namespace SnowyBot.Services
     }
 
     public async Task TrackEnded(TrackEndedEventArgs args)
-    { 
+    {
       if (!args.Player.Queue.TryDequeue(out var queueable))
       {
         return;

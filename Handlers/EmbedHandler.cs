@@ -1,7 +1,4 @@
 ﻿using Discord;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SnowyBot.Handlers
@@ -13,22 +10,20 @@ namespace SnowyBot.Handlers
          All the Tasks here are also static which means we can call them from anywhere in our program. */
     public static async Task<Embed> CreateBasicEmbed(string title, string description, Color color)
     {
-      var embed = await Task.Run(() => (new EmbedBuilder()
+      return await Task.Run(() => (new EmbedBuilder()
           .WithTitle(title)
           .WithDescription(description)
           .WithColor(color)
-          .WithCurrentTimestamp().Build()));
-      return embed;
+          .WithCurrentTimestamp().Build())).ConfigureAwait(false);
     }
 
     public static async Task<Embed> CreateErrorEmbed(string source, string error)
     {
-      var embed = await Task.Run(() => new EmbedBuilder()
-          .WithTitle($"ERROR OCCURED FROM - {source}")
-          .WithDescription($"**Error Deaitls**: \n{error}")
+      return await Task.Run(() => new EmbedBuilder()
+          .WithTitle($"Error occurred from - {source}")
+          .WithDescription($"**Error Details**: \n{error}")
           .WithColor(Color.DarkRed)
-          .WithCurrentTimestamp().Build());
-      return embed;
+          .WithCurrentTimestamp().Build()).ConfigureAwait(false);
     }
   }
 }
