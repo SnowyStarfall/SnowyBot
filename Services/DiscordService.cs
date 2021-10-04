@@ -11,69 +11,71 @@ using Victoria;
 
 namespace SnowyBot.Services
 {
-  public class DiscordService
+  public static class DiscordService
   {
-    private readonly DiscordSocketClient _client;
-    private readonly CommandHandler _commandHandler;
-    private readonly ServiceProvider _services;
-    private readonly LavaNode _lavaNode;
-    private readonly LavaLinkAudio _audioService;
-    private readonly GlobalData _globalData;
+    public static readonly DiscordSocketClient client;
+    public static readonly CommandHandler commandHandler;
+    public static readonly ServiceProvider service;
+    public static readonly LavaNode lavaNode;
+    public static readonly LavaLinkAudio audioService;
+    public static readonly GlobalData globalData;
+    public static readonly InteractivityService interactivity;
 
-    public DiscordService()
+    static DiscordService()
     {
-      _services = ConfigureServices();
-      _client = _services.GetRequiredService<DiscordSocketClient>();
-      _commandHandler = _services.GetRequiredService<CommandHandler>();
-      _lavaNode = _services.GetRequiredService<LavaNode>();
-      _globalData = _services.GetRequiredService<GlobalData>();
-      _audioService = _services.GetRequiredService<LavaLinkAudio>();
+      service = ConfigureServices();
+      client = service.GetRequiredService<DiscordSocketClient>();
+      commandHandler = service.GetRequiredService<CommandHandler>();
+      lavaNode = service.GetRequiredService<LavaNode>();
+      globalData = service.GetRequiredService<GlobalData>();
+      audioService = service.GetRequiredService<LavaLinkAudio>();
+      interactivity = service.GetRequiredService<InteractivityService>();
 
       SubscribeLavaLinkEvents();
       SubscribeDiscordEvents();
     }
 
-    public async Task InitializeAsync()
+    public static async Task InitializeAsync()
     {
       await InitializeGlobalDataAsync().ConfigureAwait(false);
 
-      await _client.LoginAsync(TokenType.Bot, GlobalData.Config.DiscordToken).ConfigureAwait(false);
-      await _client.StartAsync().ConfigureAwait(false);
+      await client.LoginAsync(TokenType.Bot, GlobalData.Config.DiscordToken).ConfigureAwait(false);
+      await client.StartAsync().ConfigureAwait(false);
 
-      await _commandHandler.InitializeAsync().ConfigureAwait(false);
+      await commandHandler.InitializeAsync().ConfigureAwait(false);
 
       await Task.Delay(-1).ConfigureAwait(false);
     }
 
-    private void SubscribeLavaLinkEvents()
+    private static void SubscribeLavaLinkEvents()
     {
-      _lavaNode.OnLog += LogAsync;
-      _lavaNode.OnTrackEnded += _audioService.TrackEnded;
+      lavaNode.OnLog += LogAsync;
+      lavaNode.OnTrackEnded += audioService.TrackEnded;
     }
 
-    private void SubscribeDiscordEvents()
+    private static void SubscribeDiscordEvents()
     {
-      _client.Ready += ReadyAsync;
-      _client.Log += LogAsync;
+      client.Ready += ReadyAsync;
+      client.Log += LogAsync;
     }
 
-    private async Task InitializeGlobalDataAsync()
+    private static async Task InitializeGlobalDataAsync()
     {
-      await _globalData.InitializeAsync().ConfigureAwait(false);
+      await globalData.InitializeAsync().ConfigureAwait(false);
     }
 
-    private async Task ReadyAsync()
+    private static async Task ReadyAsync()
     {
-      await _lavaNode.ConnectAsync().ConfigureAwait(false);
-      await _client.SetGameAsync(GlobalData.Config.GameStatus).ConfigureAwait(false);
+      await lavaNode.ConnectAsync().ConfigureAwait(false);
+      await client.SetGameAsync(GlobalData.Config.GameStatus).ConfigureAwait(false);
     }
 
-    private async Task LogAsync(LogMessage logMessage)
+    private static async Task LogAsync(LogMessage logMessage)
     {
       await LoggingService.LogAsync(logMessage.Source, logMessage.Severity, logMessage.Message).ConfigureAwait(false);
     }
 
-    private ServiceProvider ConfigureServices()
+    private static ServiceProvider ConfigureServices()
     {
       return new ServiceCollection()
           .AddSingleton<InteractivityService>()

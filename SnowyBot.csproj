@@ -15,8 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.InteractivityAddon" Version="2.4.0" />
-    <PackageReference Include="Discord.Net" Version="2.1.1" />
-    <PackageReference Include="Victoria" Version="5.1.8" />
+    <PackageReference Include="Discord.Net" Version="2.4.0" />
+    <PackageReference Include="System.Collections" Version="4.3.0" />
+    <PackageReference Include="Victoria" Version="5.2.3" />
   </ItemGroup>
 
 </Project>

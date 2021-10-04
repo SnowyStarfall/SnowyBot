@@ -1,14 +1,2 @@
-2021-10-02 00:11:53.227  INFO 12844 --- [XNIO-1 task-1] l.server.player.AudioLoaderRestHandler   : Got request to load for identifier "https://www.youtube.com/watch?v=tWGiy-uq3g4"
-2021-10-02 00:11:54.516  INFO 12844 --- [lava-daemon-pool-info-loader-2-thread-1] lavalink.server.player.AudioLoader       : Loaded track World's Most Dark Orchestral Battle Music Mix Ever Feat. Light and Darkness
-2021-10-02 00:11:55.184  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"endTime":3706000,"track":"QAAAswIAS1dvcmxkJ3MgTW9zdCBEYXJrIE9yY2hlc3RyYWwgQmF0dGxlIE11c2ljIE1peCBFdmVyIEZlYXQuIExpZ2h0IGFuZCBEYXJrbmVzcwAOT25lSG91clN0YXRpb24AAAAAADiMkAALdFdHaXktdXEzZzQAAQAraHR0cHM6Ly93d3cueW91dHViZS5jb20vd2F0Y2g/dj10V0dpeS11cTNnNAAHeW91dHViZQAAAAAAAAAA","noReplace":false,"startTime":0,"guildId":"662192186833633280","op":"play"}
-2021-10-02 01:00:06.504  INFO 12844 --- [XNIO-1 task-3] l.server.player.AudioLoaderRestHandler   : Got request to load for identifier "https://www.youtube.com/watch?v=4uvqbpkowLA&t=10s"
-2021-10-02 01:00:07.470  INFO 12844 --- [lava-daemon-pool-info-loader-2-thread-1] lavalink.server.player.AudioLoader       : Loaded track DRAGON'S WRATH | Intense Dark Apocalyptic Battle Mix | 1 Hour Epic Music
-2021-10-02 01:13:42.709  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"endTime":3637000,"track":"QAAAuAIASERSQUdPTidTIFdSQVRIIHwgSW50ZW5zZSBEYXJrIEFwb2NhbHlwdGljIEJhdHRsZSBNaXggfCAxIEhvdXIgRXBpYyBNdXNpYwAWRXBpY011c2ljQ2hhbm5lbCAoRU1DKQAAAAAAN38IAAs0dXZxYnBrb3dMQQABACtodHRwczovL3d3dy55b3V0dWJlLmNvbS93YXRjaD92PTR1dnFicGtvd0xBAAd5b3V0dWJlAAAAAAAAAAA=","noReplace":false,"startTime":0,"guildId":"662192186833633280","op":"play"}
-2021-10-02 01:59:58.733  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"guildId":"662192186833633280","op":"stop"}
-2021-10-02 01:59:58.744  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"guildId":"662192186833633280","op":"stop"}
-2021-10-02 01:59:58.750  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"guildId":"662192186833633280","op":"destroy"}
-2021-10-02 02:00:12.404  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"guildId":"662192186833633280","sessionId":"da646f2cdb5c327380053af0d41e2693","event":{"token":"d9bc22aa729727af","endpoint":"sydney2230.discord.media:443"},"op":"voiceUpdate"}
-2021-10-02 03:16:26.949  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"guildId":"662192186833633280","op":"stop"}
-2021-10-02 03:16:26.956  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : {"guildId":"662192186833633280","op":"destroy"}
-2021-10-02 05:34:31.472  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketServer          : Connection closed from /127.0.0.1:49472 -- CloseStatus[code=1006, reason=]
-2021-10-02 05:34:31.525  INFO 12844 --- [XNIO-1 I/O-4] lavalink.server.io.SocketContext         : Shutting down 0 playing players.
+2021-10-04 02:07:53.541  INFO 12844 --- [XNIO-1 I/O-2] lavalink.server.io.SocketServer          : Connection closed from /127.0.0.1:60378 -- CloseStatus[code=1006, reason=]
+2021-10-04 02:07:53.730  INFO 12844 --- [XNIO-1 I/O-2] lavalink.server.io.SocketContext         : Shutting down 0 playing players.
