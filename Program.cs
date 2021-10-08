@@ -5,7 +5,6 @@ namespace SnowyBot
 {
   public static class Program
   {
-    private static Task Main()
-        => DiscordService.InitializeAsync();
+    private static Task Main() => DiscordService.InitializeAsync();
   }
 }

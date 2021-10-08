@@ -3,7 +3,7 @@ server: # REST and WS server
   address: 127.0.0.1
 lavalink:
   server:
-    password: "youshallnotpass"
+    password: "crystalsmoonlightforest"
     sources:
       youtube: true
       bandcamp: true
@@ -39,8 +39,8 @@ sentry:
 
 logging:
   file:
-    max-history: 30
-    max-size: 1GB
+    max-history: 0
+    max-size: 0GB
   path: ./logs/
 
   level:

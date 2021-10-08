@@ -8,87 +8,125 @@ using SnowyBot.Handlers;
 using System;
 using System.Threading.Tasks;
 using Victoria;
+using System.Linq;
+using System.Threading;
+using SnowyBot.Modules;
+using SnowyBot.Database;
 
 namespace SnowyBot.Services
 {
   public static class DiscordService
   {
     public static readonly DiscordSocketClient client;
-    public static readonly CommandHandler commandHandler;
-    public static readonly ServiceProvider service;
-    public static readonly LavaNode lavaNode;
-    public static readonly LavaLinkAudio audioService;
     public static readonly GlobalData globalData;
+    public static readonly ServiceProvider provider;
+    public static readonly CommandService commands;
+    public static readonly LavaNode lavaNode;
+    public static readonly LavalinkService audioService;
+    public static readonly FunService funService;
+    public static readonly ConfigService configService;
     public static readonly InteractivityService interactivity;
 
     static DiscordService()
     {
-      service = ConfigureServices();
-      client = service.GetRequiredService<DiscordSocketClient>();
-      commandHandler = service.GetRequiredService<CommandHandler>();
-      lavaNode = service.GetRequiredService<LavaNode>();
-      globalData = service.GetRequiredService<GlobalData>();
-      audioService = service.GetRequiredService<LavaLinkAudio>();
-      interactivity = service.GetRequiredService<InteractivityService>();
-
-      SubscribeLavaLinkEvents();
-      SubscribeDiscordEvents();
-    }
-
-    public static async Task InitializeAsync()
-    {
-      await InitializeGlobalDataAsync().ConfigureAwait(false);
-
-      await client.LoginAsync(TokenType.Bot, GlobalData.Config.DiscordToken).ConfigureAwait(false);
-      await client.StartAsync().ConfigureAwait(false);
-
-      await commandHandler.InitializeAsync().ConfigureAwait(false);
-
-      await Task.Delay(-1).ConfigureAwait(false);
-    }
-
-    private static void SubscribeLavaLinkEvents()
-    {
+      // Service Setup //
+      provider = ConfigureServices();
+      client = provider.GetRequiredService<DiscordSocketClient>();
+      lavaNode = provider.GetRequiredService<LavaNode>();
+      globalData = provider.GetRequiredService<GlobalData>();
+      audioService = provider.GetRequiredService<LavalinkService>();
+      funService = provider.GetRequiredService<FunService>();
+      configService = provider.GetRequiredService<ConfigService>();
+      interactivity = provider.GetRequiredService<InteractivityService>();
+      commands = provider.GetRequiredService<CommandService>();
+      // Lavalink Events //
       lavaNode.OnLog += LogAsync;
       lavaNode.OnTrackEnded += audioService.TrackEnded;
-    }
-
-    private static void SubscribeDiscordEvents()
-    {
+      // Discord Events //
       client.Ready += ReadyAsync;
       client.Log += LogAsync;
     }
 
-    private static async Task InitializeGlobalDataAsync()
+    public static async Task InitializeAsync()
     {
       await globalData.InitializeAsync().ConfigureAwait(false);
+      provider.GetRequiredService<CommandHandler>();
+      await provider.GetRequiredService<StartupService>().StartAsync().ConfigureAwait(false);
+      await Task.Delay(-1).ConfigureAwait(false);
     }
+    public static void Interval()
+    {
+      // Create an AutoResetEvent to signal the timeout threshold in the
+      // timer callback has been reached.
+      var autoEvent = new AutoResetEvent(false);
 
+      // Create a timer that invokes CheckStatus after one second, 
+      // and every 1/4 second thereafter.
+      Console.WriteLine("{0:h:mm:ss.fff} Creating timer.\n",
+                        DateTime.Now);
+      var stateTimer = new Timer((object state) =>
+      {
+        AutoResetEvent autoEvent = (AutoResetEvent)state;
+        autoEvent.Set();
+      }, autoEvent, 1000, 250);
+
+      // When autoEvent signals, change the period to every half second.
+      autoEvent.WaitOne();
+      stateTimer.Change(0, 500);
+      Console.WriteLine("\nChanging period to .5 seconds.\n");
+
+      // When autoEvent signals the second time, dispose of the timer.
+      autoEvent.WaitOne();
+      stateTimer.Dispose();
+      Console.WriteLine("\nDestroying timer.");
+    }
     private static async Task ReadyAsync()
     {
       await lavaNode.ConnectAsync().ConfigureAwait(false);
-      await client.SetGameAsync(GlobalData.Config.GameStatus).ConfigureAwait(false);
+      await client.SetGameAsync($"music for {lavaNode.Players.Count()} servers.").ConfigureAwait(false);
     }
-
     private static async Task LogAsync(LogMessage logMessage)
     {
       await LoggingService.LogAsync(logMessage.Source, logMessage.Severity, logMessage.Message).ConfigureAwait(false);
     }
-
     private static ServiceProvider ConfigureServices()
     {
       return new ServiceCollection()
-          .AddSingleton<InteractivityService>()
-          .AddSingleton(new InteractivityConfig { DefaultTimeout = TimeSpan.FromSeconds(20) }) // You can optionally add a custom config
-          .AddSingleton<DiscordSocketClient>()
-          .AddSingleton<CommandService>()
-          .AddSingleton<CommandHandler>()
-          .AddSingleton<LavaNode>()
-          .AddSingleton(new LavaConfig())
-          .AddSingleton<LavaLinkAudio>()
-          .AddSingleton<BotService>()
-          .AddSingleton<GlobalData>()
-          .BuildServiceProvider();
+        .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+        {
+          LogLevel = LogSeverity.Verbose,
+          AlwaysDownloadUsers = true,
+        }))
+        .AddSingleton(new CommandService(new CommandServiceConfig()
+        {
+          LogLevel = LogSeverity.Verbose,
+          DefaultRunMode = RunMode.Async,
+          CaseSensitiveCommands = false
+        }))
+        .AddSingleton<CommandHandler>()
+        .AddSingleton<FunService>()
+        .AddSingleton<ConfigService>()
+        .AddSingleton<InteractivityService>()
+        .AddSingleton(new InteractivityConfig
+        {
+          DefaultTimeout = TimeSpan.FromSeconds(20)
+        })
+        .AddSingleton<LavaNode>()
+        .AddSingleton(new LavaConfig()
+        {
+          Authorization = "crystalsmoonlightforest",
+          EnableResume = true,
+          ReconnectAttempts = 10,
+          ReconnectDelay = TimeSpan.FromSeconds(5),
+          ResumeTimeout = TimeSpan.FromSeconds(120),
+          SelfDeaf = true
+        })
+        .AddSingleton<LavalinkService>()
+        .AddSingleton<GlobalData>()
+        .AddSingleton<StartupService>()
+        .AddDbContext<GuildContext>()
+        .AddSingleton<Guilds>()
+        .BuildServiceProvider();
     }
   }
 }

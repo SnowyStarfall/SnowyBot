@@ -1,9 +1,10 @@
 ﻿using Discord;
 using Newtonsoft.Json;
-using SnowyBot.DataStructs;
+using SnowyBot.Structs;
 using SnowyBot.Services;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,14 +15,10 @@ namespace SnowyBot.Handlers
     public static string ConfigPath { get; set; } = "config.json";
     public static BotConfig Config { get; set; }
 
-    //Initialize the Config and Global Properties.
-    //TODO (Check token validity before but starts,
-    //right now if the config file is generated but the user hasn't filled it out it will throw a null exception error.
     public async Task InitializeAsync()
     {
-      var json = string.Empty;
+      string json;
 
-      //Check if Config.json Exists.
       if (!File.Exists(ConfigPath))
       {
         json = JsonConvert.SerializeObject(GenerateNewConfig(), Formatting.Indented);
@@ -30,17 +27,15 @@ namespace SnowyBot.Handlers
         await Task.Delay(-1).ConfigureAwait(false);
       }
 
-      //If Config.json exists, get the values and apply them to the Global Property (Config).
       json = File.ReadAllText(ConfigPath, new UTF8Encoding(false));
       Config = JsonConvert.DeserializeObject<BotConfig>(json);
     }
 
-    //If no config is found, this structure is generated as an empty config. 
     private static BotConfig GenerateNewConfig() => new BotConfig
     {
       DiscordToken = "ODE0NzgwNjY1MDE4MzE4ODc4.YDi1oA.eqQAMiBjrleG2IbEzFalQlFE5KY",
       DefaultPrefix = "!",
-      GameStatus = "music for awesome people.",
+      GameStatus = $"music for {DiscordService.lavaNode.Players.Count()} servers.",
       BlacklistedChannels = new List<ulong>()
     };
   }

@@ -1,2 +1,1 @@
-2021-10-04 02:07:53.541  INFO 12844 --- [XNIO-1 I/O-2] lavalink.server.io.SocketServer          : Connection closed from /127.0.0.1:60378 -- CloseStatus[code=1006, reason=]
-2021-10-04 02:07:53.730  INFO 12844 --- [XNIO-1 I/O-2] lavalink.server.io.SocketContext         : Shutting down 0 playing players.
+2021-10-08 12:15:44.755  INFO 16620 --- [XNIO-1 I/O-3] lavalink.server.io.SocketServer          : {"key":"Victoria","timeout":120,"op":"configureResuming"}
