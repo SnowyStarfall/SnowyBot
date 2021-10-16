@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Interactivity;
 using Microsoft.Extensions.DependencyInjection;
-using SnowyBot.Services;
 using SnowyBot.Handlers;
 using System;
 using System.Threading.Tasks;
@@ -22,26 +21,29 @@ namespace SnowyBot.Services
     public static readonly ServiceProvider provider;
     public static readonly CommandService commands;
     public static readonly LavaNode lavaNode;
-    public static readonly LavalinkService audioService;
-    public static readonly FunService funService;
-    public static readonly ConfigService configService;
+    public static readonly LavalinkModule audioModule;
+    public static readonly FunModule funModule;
+    public static readonly CharacterModule characterModule;
+    public static readonly ConfigModule configService;
     public static readonly InteractivityService interactivity;
 
     static DiscordService()
     {
+
       // Service Setup //
       provider = ConfigureServices();
       client = provider.GetRequiredService<DiscordSocketClient>();
       lavaNode = provider.GetRequiredService<LavaNode>();
       globalData = provider.GetRequiredService<GlobalData>();
-      audioService = provider.GetRequiredService<LavalinkService>();
-      funService = provider.GetRequiredService<FunService>();
-      configService = provider.GetRequiredService<ConfigService>();
+      audioModule = provider.GetRequiredService<LavalinkModule>();
+      funModule = provider.GetRequiredService<FunModule>();
+      characterModule = provider.GetRequiredService<CharacterModule>();
+      configService = provider.GetRequiredService<ConfigModule>();
       interactivity = provider.GetRequiredService<InteractivityService>();
       commands = provider.GetRequiredService<CommandService>();
       // Lavalink Events //
       lavaNode.OnLog += LogAsync;
-      lavaNode.OnTrackEnded += audioService.TrackEnded;
+      lavaNode.OnTrackEnded += audioModule.TrackEnded;
       // Discord Events //
       client.Ready += ReadyAsync;
       client.Log += LogAsync;
@@ -104,8 +106,9 @@ namespace SnowyBot.Services
           CaseSensitiveCommands = false
         }))
         .AddSingleton<CommandHandler>()
-        .AddSingleton<FunService>()
-        .AddSingleton<ConfigService>()
+        .AddSingleton<FunModule>()
+        .AddSingleton<CharacterModule>()
+        .AddSingleton<ConfigModule>()
         .AddSingleton<InteractivityService>()
         .AddSingleton(new InteractivityConfig
         {
@@ -121,11 +124,13 @@ namespace SnowyBot.Services
           ResumeTimeout = TimeSpan.FromSeconds(120),
           SelfDeaf = true
         })
-        .AddSingleton<LavalinkService>()
+        .AddSingleton<LavalinkModule>()
         .AddSingleton<GlobalData>()
         .AddSingleton<StartupService>()
         .AddDbContext<GuildContext>()
         .AddSingleton<Guilds>()
+        .AddSingleton<CharacterContext>()
+        .AddSingleton<Characters>()
         .BuildServiceProvider();
     }
   }

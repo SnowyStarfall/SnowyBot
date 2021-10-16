@@ -14,20 +14,30 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.InteractivityAddon" Version="2.4.0" />
-    <PackageReference Include="Discord.Net" Version="2.4.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.10">
+    <PackageReference Include="Discord.InteractivityAddon.Labs" Version="2.4.1-labs-20210709.1" />
+    <PackageReference Include="Discord.Net.Labs" Version="3.1.4" />
+    <PackageReference Include="Discord.Net.Labs.Commands" Version="3.1.4" />
+    <PackageReference Include="Discord.Net.Labs.Core" Version="3.1.4" />
+    <PackageReference Include="Discord.Net.Labs.Rest" Version="3.1.4" />
+    <PackageReference Include="Discord.Net.Labs.Webhook" Version="3.1.4" />
+    <PackageReference Include="Discord.Net.Labs.WebSocket" Version="3.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.11">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="5.0.2" />
-    <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="Victoria" Version="5.2.3" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

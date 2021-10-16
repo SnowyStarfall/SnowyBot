@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
+using Discord.Rest;
 using System.Collections.Generic;
-using System.Text;
+using Discord;
 
 namespace SnowyBot.Database
 {
@@ -13,9 +14,15 @@ namespace SnowyBot.Database
   }
   public class Guild
   {
+    // ID of the Guild
     public ulong ID { get; set; }
+    // Command prefix for the Guild
     public string Prefix { get; set; }
-    public ulong RoleChannel { get; set; }
-    public ulong RoleMessage { get; set; }
+    //// Contains the channel ID's for the Role Messages
+    //public string RoleChannel { get; set; }
+    //// Contains the message ID's for the Role Messages
+    //public string RoleMessage { get; set; }
+    //// Contains the role-emoji pairs for the React Roles
+    //public string Roles { get; set; }
   }
 }

@@ -23,7 +23,6 @@ C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\obj\Debug\netcoreapp3.1\SnowyBot.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\obj\Debug\netcoreapp3.1\SnowyBot.pdb
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\obj\Debug\netcoreapp3.1\SnowyBot.genruntimeconfig.cache
-C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Discord.InteractivityAddon.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\System.Runtime.CompilerServices.Unsafe.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\System.Text.Encodings.Web.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\System.Text.Json.dll
@@ -44,4 +43,5 @@ C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\System.Diagnostics.DiagnosticSource.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Humanizer.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Microsoft.EntityFrameworkCore.Design.dll
-C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\obj\Debug\netcoreapp3.1\SnowyBot.csproj.CopyComplete
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Discord.InteractivityAddon.Labs.dll
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\config.json

@@ -25,6 +25,12 @@ namespace SnowyBot.Migrations
                     b.Property<string>("Prefix")
                         .HasColumnType("longtext");
 
+                    b.Property<ulong>("RoleChannel")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("RoleMessage")
+                        .HasColumnType("bigint unsigned");
+
                     b.HasKey("ID");
 
                     b.ToTable("Guilds");
