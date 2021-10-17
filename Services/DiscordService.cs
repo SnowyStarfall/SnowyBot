@@ -27,6 +27,8 @@ namespace SnowyBot.Services
     public static readonly ConfigModule configService;
     public static readonly InteractivityService interactivity;
 
+    public static string ownerAvatarURL;
+
     static DiscordService()
     {
 
@@ -53,6 +55,7 @@ namespace SnowyBot.Services
     {
       await globalData.InitializeAsync().ConfigureAwait(false);
       provider.GetRequiredService<CommandHandler>();
+      provider.GetRequiredService<EmbedHandler>();
       await provider.GetRequiredService<StartupService>().StartAsync().ConfigureAwait(false);
       await Task.Delay(-1).ConfigureAwait(false);
     }
@@ -106,6 +109,7 @@ namespace SnowyBot.Services
           CaseSensitiveCommands = false
         }))
         .AddSingleton<CommandHandler>()
+        .AddSingleton<EmbedHandler>()
         .AddSingleton<FunModule>()
         .AddSingleton<CharacterModule>()
         .AddSingleton<ConfigModule>()

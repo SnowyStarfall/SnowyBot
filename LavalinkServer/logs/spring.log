@@ -1,1 +1,1 @@
-2021-10-16 07:37:56.787  INFO 20124 --- [pool-5-thread-1] lavalink.server.io.SocketContext         : Shutting down 0 playing players.
+2021-10-16 21:23:26.194  INFO 20124 --- [XNIO-1 I/O-3] lavalink.server.io.SocketServer          : {"key":"Victoria","timeout":120,"op":"configureResuming"}

@@ -1,15 +1,19 @@
 ﻿using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using SnowyBot.Database;
+using SnowyBot.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Victoria;
 
 namespace SnowyBot.Handlers
 {
-  public static class EmbedHandler
+  public class EmbedHandler
   {
-    /* This file is where we can store all the Embed Helper Tasks (So to speak). 
-         We wrap all the creations of new EmbedBuilder's in a Task.Run to allow us to stick with Async calls. 
-         All the Tasks here are also static which means we can call them from anywhere in our program. */
+    public static Characters characters;
+    public EmbedHandler(Characters _characters) => characters = _characters;
+
     public static Embed CreateBasicEmbed(string title, string description, Color color)
     {
       EmbedBuilder builder = new EmbedBuilder();
@@ -54,6 +58,32 @@ namespace SnowyBot.Handlers
 
       return builder.Build();
     }
+
+    public static async Task<Embed> CreateCharacterEmbedAsync(ulong userID, string characterID, string[] userData)
+    {
+      Character character = await characters.ViewCharacterByID(userID, $"{userID}:{characterID}").ConfigureAwait(false);
+
+      EmbedBuilder builder = new EmbedBuilder();
+      builder.WithAuthor($"{userData[0]}#{userData[1]}", userData[2]);
+      builder.WithThumbnailUrl(character.AvatarURL);
+      builder.WithTitle(character.Name);
+      builder.WithDescription(character.Description);
+      builder.AddField("Prefix", character.Prefix, true);
+      builder.AddField("Gender", character.Gender, true);
+      builder.AddField("Sex", character.Sex, true);
+      builder.AddField("Species", character.Species, true);
+      builder.AddField("Age", character.Age + " years", true);
+      builder.AddField("Height", character.Height, true);
+      builder.AddField("Weight", character.Weight, true);
+      builder.AddField("Orientation", character.Orientation, true);
+      builder.AddField("Created", character.CreationDate, true);
+      builder.WithImageUrl(character.ReferenceURL);
+      builder.WithCurrentTimestamp();
+      builder.WithColor(new Color(0xcc70ff));
+      builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", DiscordService.ownerAvatarURL);
+      return builder.Build();
+    }
+
     public static string NumToEmoji(int num)
     {
       return num == 0 ? "0️⃣" :

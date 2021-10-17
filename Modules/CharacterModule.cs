@@ -17,8 +17,7 @@ namespace SnowyBot.Modules
     public CharacterModule(Characters _characters) => characters = _characters;
 
     [Command("cha")]
-    // , "char add", "char create"
-    [Alias(new string[] { "character add", "character create"})]
+    [Alias(new string[] { "character add", "character create", "char add", "char create" })]
     public async Task AddCharacter()
     {
       string prefix = null;
@@ -216,8 +215,7 @@ namespace SnowyBot.Modules
       await characters.AddCharacter(Context.User.Id, DateTime.Now, prefix, name, gender, sex, species, age, height, weight, orientation, description, avatarURL, referenceURL).ConfigureAwait(false);
     }
     [Command("chv")]
-    [Alias(new string[] { "character view"})]
-    // , "char view" 
+    [Alias(new string[] { "character view", "char view" })]
     public async Task ViewCharacter([Remainder] string name)
     {
       Character character = await characters.ViewCharacter(Context.User.Id, name).ConfigureAwait(false);
@@ -245,17 +243,18 @@ namespace SnowyBot.Modules
       builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl());
+      builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl(ImageFormat.Gif));
+
+      string[] id = character.CharacterID.Split(":");
 
       ComponentBuilder cBuilder = new ComponentBuilder();
-      cBuilder.WithButton("Edit", $"EditCharacter:{Context.User.Id}:{character.CharacterID}:{Context.Channel.Id}", ButtonStyle.Primary);
-      cBuilder.WithButton("Delete", $"DeleteCharacter:{Context.User.Id}:{character.CharacterID}:{Context.Channel.Id}", ButtonStyle.Danger);
+      cBuilder.WithButton("Edit", $"EditCharacter:{Context.User.Id}:{id[1]}:{Context.Channel.Id}", ButtonStyle.Primary);
+      cBuilder.WithButton("Delete", $"DeleteCharacter:{Context.User.Id}:{id[1]}:{Context.Channel.Id}", ButtonStyle.Danger);
 
       await Context.Channel.SendMessageAsync(null, false, builder.Build(), null, null, null, cBuilder.Build()).ConfigureAwait(false);
     }
     [Command("chd")]
-    [Alias(new string[] { "character delete"})]
-    // , "char delete" 
+    [Alias(new string[] { "character delete", "char delete" })]
     public async Task DeleteCharacter([Remainder] string name)
     {
       string[] result = name.Split(" ");

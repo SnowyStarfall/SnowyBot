@@ -25,9 +25,17 @@ namespace SnowyBot.Database
       context.Remove(character);
       await context.SaveChangesAsync().ConfigureAwait(false);
     }
-    public async Task EditCharacter(ulong userID, ulong characterID, CharacterDataType type, string value)
+    public async Task EditCharacter(ulong userID, string characterID, CharacterDataType type, string value)
     {
-      Character character = await context.Characters.FindAsync($"{userID}:{characterID}").ConfigureAwait(false);
+      Character character = await context.Characters
+                   .AsAsyncEnumerable()
+                   .Where(x => x.UserID == userID && x.CharacterID == characterID)
+                   .FirstOrDefaultAsync()
+                   .ConfigureAwait(false);
+      if (character == null)
+      {
+        throw new Exception("Character was null.");
+      }
       switch (type)
       {
         case CharacterDataType.Prefix:
@@ -96,6 +104,14 @@ namespace SnowyBot.Database
       return await context.Characters
                    .AsAsyncEnumerable()
                    .Where(x => x.UserID == userID && x.Name == name)
+                   .FirstOrDefaultAsync()
+                   .ConfigureAwait(false);
+    }
+    public async Task<Character> ViewCharacterByID(ulong userID, string characterID)
+    {
+      return await context.Characters
+                   .AsAsyncEnumerable()
+                   .Where(x => x.UserID == userID && x.CharacterID == characterID)
                    .FirstOrDefaultAsync()
                    .ConfigureAwait(false);
     }
