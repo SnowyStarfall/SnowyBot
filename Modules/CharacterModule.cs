@@ -178,7 +178,7 @@ namespace SnowyBot.Modules
 
       await Context.Channel.SendMessageAsync("Please send an avatar picture.").ConfigureAwait(false);
 
-      var avatarResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.First() != null), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var avatarResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
       if (avatarResult.IsSuccess)
       {
@@ -195,7 +195,7 @@ namespace SnowyBot.Modules
 
       await Context.Channel.SendMessageAsync("Please send a reference picture, or enter \"Skip\" to skip.").ConfigureAwait(false);
 
-      var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.First() != null), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0 || x.Content.ToLower() == "skip"), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
       if (referenceResult.IsSuccess)
       {
@@ -240,10 +240,11 @@ namespace SnowyBot.Modules
       builder.AddField("Weight", character.Weight, true);
       builder.AddField("Orientation", character.Orientation, true);
       builder.AddField("Created", character.CreationDate, true);
-      builder.WithImageUrl(character.ReferenceURL);
+      if(character.ReferenceURL != "X")
+        builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl(ImageFormat.Gif));
+      builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
       string[] id = character.CharacterID.Split(":");
 
@@ -281,7 +282,8 @@ namespace SnowyBot.Modules
       builder.AddField("Weight", character.Weight, true);
       builder.AddField("Orientation", character.Orientation, true);
       builder.AddField("Created", character.CreationDate, true);
-      builder.WithImageUrl(character.ReferenceURL);
+      if (character.ReferenceURL != "X")
+        builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
       builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl());

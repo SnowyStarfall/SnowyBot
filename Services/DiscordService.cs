@@ -11,41 +11,67 @@ using System.Linq;
 using System.Threading;
 using SnowyBot.Modules;
 using SnowyBot.Database;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.Upload;
+using Google.Apis.Util.Store;
+using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
+using Discord.Rest;
+using YoutubeExplode;
+using System.Collections.Concurrent;
 
 namespace SnowyBot.Services
 {
   public static class DiscordService
   {
     public static readonly DiscordSocketClient client;
-    public static readonly GlobalData globalData;
-    public static readonly ServiceProvider provider;
-    public static readonly CommandService commands;
+
+    public static readonly YoutubeClient youTube;
+
     public static readonly LavaNode lavaNode;
-    public static readonly LavalinkModule audioModule;
-    public static readonly FunModule funModule;
-    public static readonly CharacterModule characterModule;
-    public static readonly ConfigModule configService;
+
     public static readonly InteractivityService interactivity;
 
-    public static string ownerAvatarURL;
+    public static readonly GlobalData globalData;
+
+    public static readonly ServiceProvider provider;
+    public static readonly ConfigModule configService;
+    public static readonly CommandService commands;
+    public static readonly PlaylistService playlists;
+
+    public static readonly FunModule funModule;
+    public static readonly LavalinkModule audioModule;
+    public static readonly CharacterModule characterModule;
+
+    public static ConcurrentDictionary<LavaPlayer, bool> tempGuildData;
 
     static DiscordService()
     {
-
       // Service Setup //
       provider = ConfigureServices();
+
       client = provider.GetRequiredService<DiscordSocketClient>();
+
+      youTube = provider.GetRequiredService<YoutubeClient>();
+
       lavaNode = provider.GetRequiredService<LavaNode>();
-      globalData = provider.GetRequiredService<GlobalData>();
-      audioModule = provider.GetRequiredService<LavalinkModule>();
-      funModule = provider.GetRequiredService<FunModule>();
-      characterModule = provider.GetRequiredService<CharacterModule>();
-      configService = provider.GetRequiredService<ConfigModule>();
+
       interactivity = provider.GetRequiredService<InteractivityService>();
+
+      globalData = provider.GetRequiredService<GlobalData>();
+      configService = provider.GetRequiredService<ConfigModule>();
       commands = provider.GetRequiredService<CommandService>();
+      playlists = provider.GetRequiredService<PlaylistService>();
+
+      funModule = provider.GetRequiredService<FunModule>();
+      audioModule = provider.GetRequiredService<LavalinkModule>();
+      characterModule = provider.GetRequiredService<CharacterModule>();
+
       // Lavalink Events //
       lavaNode.OnLog += LogAsync;
       lavaNode.OnTrackEnded += audioModule.TrackEnded;
+
       // Discord Events //
       client.Ready += ReadyAsync;
       client.Log += LogAsync;
@@ -57,33 +83,10 @@ namespace SnowyBot.Services
       provider.GetRequiredService<CommandHandler>();
       provider.GetRequiredService<EmbedHandler>();
       await provider.GetRequiredService<StartupService>().StartAsync().ConfigureAwait(false);
+
+      tempGuildData = new ConcurrentDictionary<LavaPlayer, bool>();
+
       await Task.Delay(-1).ConfigureAwait(false);
-    }
-    public static void Interval()
-    {
-      // Create an AutoResetEvent to signal the timeout threshold in the
-      // timer callback has been reached.
-      var autoEvent = new AutoResetEvent(false);
-
-      // Create a timer that invokes CheckStatus after one second, 
-      // and every 1/4 second thereafter.
-      Console.WriteLine("{0:h:mm:ss.fff} Creating timer.\n",
-                        DateTime.Now);
-      var stateTimer = new Timer((object state) =>
-      {
-        AutoResetEvent autoEvent = (AutoResetEvent)state;
-        autoEvent.Set();
-      }, autoEvent, 1000, 250);
-
-      // When autoEvent signals, change the period to every half second.
-      autoEvent.WaitOne();
-      stateTimer.Change(0, 500);
-      Console.WriteLine("\nChanging period to .5 seconds.\n");
-
-      // When autoEvent signals the second time, dispose of the timer.
-      autoEvent.WaitOne();
-      stateTimer.Dispose();
-      Console.WriteLine("\nDestroying timer.");
     }
     private static async Task ReadyAsync()
     {
@@ -101,6 +104,7 @@ namespace SnowyBot.Services
         {
           LogLevel = LogSeverity.Verbose,
           AlwaysDownloadUsers = true,
+          GatewayIntents = GatewayIntents.All,
         }))
         .AddSingleton(new CommandService(new CommandServiceConfig()
         {
@@ -108,13 +112,8 @@ namespace SnowyBot.Services
           DefaultRunMode = RunMode.Async,
           CaseSensitiveCommands = false
         }))
-        .AddSingleton<CommandHandler>()
-        .AddSingleton<EmbedHandler>()
-        .AddSingleton<FunModule>()
-        .AddSingleton<CharacterModule>()
-        .AddSingleton<ConfigModule>()
         .AddSingleton<InteractivityService>()
-        .AddSingleton(new InteractivityConfig
+        .AddSingleton(new InteractivityConfig()
         {
           DefaultTimeout = TimeSpan.FromSeconds(20)
         })
@@ -128,6 +127,16 @@ namespace SnowyBot.Services
           ResumeTimeout = TimeSpan.FromSeconds(120),
           SelfDeaf = true
         })
+        .AddSingleton(new YouTubeService(new BaseClientService.Initializer()
+        {
+          ApiKey = "AIzaSyCoFA16Gt7lHoX4rJHVOBH6Jh77xW6Je78",
+          ApplicationName = "SnowyBot",
+        }))
+        .AddSingleton<CommandHandler>()
+        .AddSingleton<EmbedHandler>()
+        .AddSingleton<FunModule>()
+        .AddSingleton<CharacterModule>()
+        .AddSingleton<ConfigModule>()
         .AddSingleton<LavalinkModule>()
         .AddSingleton<GlobalData>()
         .AddSingleton<StartupService>()
@@ -135,6 +144,8 @@ namespace SnowyBot.Services
         .AddSingleton<Guilds>()
         .AddSingleton<CharacterContext>()
         .AddSingleton<Characters>()
+        .AddSingleton<PlaylistService>()
+        .AddSingleton<YoutubeClient>()
         .BuildServiceProvider();
     }
   }

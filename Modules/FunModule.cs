@@ -1,10 +1,9 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using SnowyBot.Database;
-using SnowyBot.Handlers;
+using SnowyBot.Services;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,7 +17,7 @@ namespace SnowyBot.Modules
     public Random random = new Random();
 
     [Command("Question")]
-    [Alias(new string [] {"Q"})]
+    [Alias(new string[] { "Q" })]
     public async Task QuestionAsync([Remainder] string question = null)
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -54,6 +53,7 @@ namespace SnowyBot.Modules
       await Context.Message.DeleteAsync().ConfigureAwait(false);
     }
     [Command("8ball")]
+    [Alias(new string[] { "8" })]
     public async Task EightBall([Remainder] string question)
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -66,6 +66,7 @@ namespace SnowyBot.Modules
       await Context.Message.ReplyAsync($"{responses[response]}").ConfigureAwait(false);
     }
     [Command("a")]
+    [Alias(new string[] { "screm" })]
     public async Task A([Remainder] string letter)
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -89,6 +90,7 @@ namespace SnowyBot.Modules
       await Context.Message.ReplyAsync(reply).ConfigureAwait(false);
     }
     [Command("Info")]
+    [Alias(new string[] { "server" })]
     public async Task Info()
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -107,7 +109,7 @@ namespace SnowyBot.Modules
       builder.WithTitle($"{context.Guild.Name}");
       builder.WithThumbnailUrl(context.Guild.IconUrl);
       builder.WithDescription($"{context.Guild.Description}");
-      builder.WithColor(new Color(0x53f2a0));
+      builder.WithColor(new Color(0xcc70ff));
       builder.AddField("Prefix", $"{guilds.GetGuildPrefix(context.Guild.Id).Result ?? "!"}", false);
       builder.AddField("Owner", context.Guild.Owner.Username, true);
       builder.AddField("Creation Date", $"{context.Guild.CreatedAt}");
@@ -121,5 +123,77 @@ namespace SnowyBot.Modules
       builder.WithFooter("Created by SnowyStarfall - Snowy#0364", context.Client.CurrentUser.GetAvatarUrl());
       await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
     }
+    [Command("ratewaifu")]
+    [Alias(new string[] { "rate", "waifu" })]
+    public async Task RateWaifu([Remainder] string mention = null)
+    {
+      if (mention == null)
+      {
+        int value = 0;
+
+        foreach (var s in Context.User.Username)
+          value += s;
+
+        int result = value * Context.User.Username.Length;
+
+        int rating = result % 11;
+
+        await Context.Channel.SendMessageAsync($"I give you a {rating}/10").ConfigureAwait(false);
+      }
+      else
+      {
+        if (Context.Message.MentionedUserIds.Count > 0)
+        {
+          IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
+
+          int value = 0;
+
+          foreach (var s in user.Username)
+            value += s;
+
+          int result = value * user.Username.Length;
+
+          int rating = result % 11;
+
+          await Context.Channel.SendMessageAsync($"I give {user.Mention} a {rating}/10").ConfigureAwait(false);
+        }
+        else
+        {
+          IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
+
+          int value = 0;
+
+          foreach (var s in user.Username)
+            value += s;
+
+          int result = value * user.Username.Length;
+
+          int rating = result % 11;
+
+          await Context.Channel.SendMessageAsync($"I give {user.Mention} a {rating}/10").ConfigureAwait(false);
+        }
+      }
+    }
+    [Command("jumbo")]
+    public async Task Jumbo([Remainder] string emoji)
+    {
+      bool valid = Emote.TryParse(emoji, out var emote);
+      if(!valid)
+        return;
+      await Context.Channel.SendMessageAsync(emote.Url).ConfigureAwait(false);
+    }
+    [Command("awoo")]
+    public async Task Awoo()
+    {
+      int amount = random.Next(0, 101);
+      string awoo = $"{(random.Next(0, 2) == 0 ? "a" : "A")}{(random.Next(0, 2) == 0 ? "w" : "W")}";
+
+      for(int i = 0; i < amount; i++)
+        awoo += random.Next(0, 2) == 0 ? "o" : "O";
+
+      awoo += "!";
+
+      await Context.Channel.SendMessageAsync(awoo).ConfigureAwait(false);
+    }  
   }
 }

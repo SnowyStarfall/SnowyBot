@@ -14,14 +14,14 @@ namespace SnowyBot.Services
   public class StartupService
   {
     public static IServiceProvider provider;
-    private readonly DiscordSocketClient discord;
+    private readonly DiscordSocketClient client;
     private readonly CommandService commands;
     private readonly Guilds guilds;
 
-    public StartupService(IServiceProvider _provider, DiscordSocketClient _discord, CommandService _commands, Guilds _guilds)
+    public StartupService(IServiceProvider _provider, DiscordSocketClient _client, CommandService _commands, Guilds _guilds)
     {
       provider = _provider;
-      discord = _discord;
+      client = _client;
       commands = _commands;
       guilds = _guilds;
 
@@ -45,8 +45,8 @@ namespace SnowyBot.Services
     //}
     public async Task StartAsync()
     {
-      await discord.LoginAsync(TokenType.Bot, GlobalData.Config.DiscordToken).ConfigureAwait(false);
-      await discord.StartAsync().ConfigureAwait(false);
+      await client.LoginAsync(TokenType.Bot, GlobalData.Config.DiscordToken).ConfigureAwait(false);
+      await client.StartAsync().ConfigureAwait(false);
 
       await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider).ConfigureAwait(false);
     }

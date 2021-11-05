@@ -12,6 +12,9 @@ using Discord.Commands;
 using Victoria.Responses.Search;
 using Discord.Rest;
 using SnowyBot.Services;
+using YoutubeExplode.Playlists;
+using System.Collections.Generic;
+using System.Net.Http;
 
 namespace SnowyBot.Modules
 {
@@ -23,213 +26,281 @@ namespace SnowyBot.Modules
     public readonly LavaNode lavaNode;
 
     [Command("Join")]
-    public async Task JoinAsync()
+    public async Task Join()
     {
       IVoiceState voiceState = Context.User as IVoiceState;
       if (lavaNode.HasPlayer(Context.Guild))
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Join", "I'm already connected to a voice channel.")).ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("I'm already connected to a voice channel.").ConfigureAwait(false);
 
       if (voiceState.VoiceChannel is null)
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Join", "You must be connected to a voice channel.")).ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("You must be connected to a voice channel.").ConfigureAwait(false);
 
       await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
-      await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Join", $"Connected to {voiceState.VoiceChannel.Name}.", Color.Green)).ConfigureAwait(false);
-      
+      await Context.Channel.SendMessageAsync($"Connected to {voiceState.VoiceChannel.Name}.").ConfigureAwait(false);
     }
     [Command("Play")]
-    public async Task PlayAsync([Remainder] string query)
+    public async Task Play([Remainder] string query = null)
     {
+      // User
       SocketGuildUser user = Context.User as SocketGuildUser;
 
-      if (user.VoiceChannel == null)
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Play", "You need to be in a voice channel.")).ConfigureAwait(false);
+      // Timestamp check
+      int index = query.IndexOf("?t=");
+      int seconds = -1;
+      if (index != -1)
+      {
+        seconds = int.Parse(query.Remove(0, index + 5));
+        query = query.Remove(index, query.Length - index);
+      }
 
+      // List of playlist videos
+      List<PlaylistVideo> videos = null;
+
+      // Is the query a playlist link?
+      if (PlaylistId.TryParse(query) != null)
+        videos = await DiscordService.playlists.GetPlaylistResults(query).ConfigureAwait(false);
+
+      // Check if the server has no
+      // player. If it doesn't, join.
       if (!lavaNode.HasPlayer(Context.Guild))
-        await JoinAsync().ConfigureAwait(false);
+        await Join().ConfigureAwait(false);
 
       try
       {
         LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
 
-        LavaTrack track = null;
+        List<LavaTrack> tracks = new List<LavaTrack>();
 
-        SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ? await lavaNode.SearchAsync(SearchType.YouTube, query).ConfigureAwait(false) :
-                                                                                     await lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
-
-        if (search.Status == SearchStatus.NoMatches)
+        if (videos == null)
         {
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music", $"No results for {query}.")).ConfigureAwait(false);
-          return;
+          SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ? await lavaNode.SearchAsync(SearchType.YouTube, query).ConfigureAwait(false)
+                                                                                     : await lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
+          if (search.Status == SearchStatus.NoMatches)
+          {
+            await Context.Channel.SendMessageAsync($"No results for {query}. :x:").ConfigureAwait(false);
+            return;
+          }
+
+          tracks.Add(search.Tracks.FirstOrDefault());
         }
 
-        //var message = await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateMusicListEmbed(search.Tracks)).ConfigureAwait(false);
-        //for (int i = 0; i < search.Tracks.Count; i++)
-        //  await message.AddReactionAsync(new Emoji(EmbedHandler.NumToEmoji(i + 1))).ConfigureAwait(false);
 
-        //var result = await DiscordService.interactivity.NextReactionAsync(default, default, TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-        //if (result.IsSuccess)
-        //{
-        //  for (int i = 0; i < search.Tracks.Count; i++)
-        //  {
-        //    if (result.Value.Emote == new Emoji(EmbedHandler.NumToEmoji(i + 1)))
-        //    {
-        //      track = search.Tracks.ElementAt(i);
-        //      break;
-        //    }
-        //  }
-        //}
-        //else
-        //{
-        //  await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music", "Selection timed out.", new Color(0xcc70ff))).ConfigureAwait(false);
-        //  return;
-        //}
-
-        track = search.Tracks.FirstOrDefault();
-
-        if ((player.Track != null && player.PlayerState is PlayerState.Playing) || player.PlayerState is PlayerState.Paused)
+        if (player.Track != null || player.PlayerState is PlayerState.Playing || player.PlayerState is PlayerState.Paused)
         {
-          player.Queue.Enqueue(track);
-          await LoggingService.LogInformationAsync("Music", $"Title: {track.Title}\nGuild: {Context.Guild.Id}\nQuery: {query}").ConfigureAwait(false);
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music", $"{track.Title} has been added to the queue.", Color.Blue)).ConfigureAwait(false);
+          if (videos != null)
+          {
+            foreach (PlaylistVideo video in videos)
+            {
+              SearchResponse response = await lavaNode.SearchYouTubeAsync(video.Title).ConfigureAwait(false);
+              LavaTrack track = response.Tracks.FirstOrDefault();
+              player.Queue.Enqueue(track);
+            }
+            await Context.Channel.SendMessageAsync($":white_check_mark: Playlist has been added to the queue.").ConfigureAwait(false);
+          }
+          else
+          {
+            player.Queue.Enqueue(tracks.FirstOrDefault());
+            await Context.Channel.SendMessageAsync($":white_check_mark: {tracks.FirstOrDefault().Title} has been added to the queue.").ConfigureAwait(false);
+          }
         }
         else
         {
-          await player.PlayAsync(track).ConfigureAwait(false);
-          await LoggingService.LogInformationAsync("Music", $"Now Playing: {track.Title}\nUrl: {track.Url}\nGuild: {Context.Guild.Id}").ConfigureAwait(false);
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music", $"Now Playing: {track.Title}\nUrl: {track.Url}", Color.Blue)).ConfigureAwait(false);
+          if (videos != null)
+          {
+            bool playFirst = false;
+            for (int i = 0; i < videos.Count; i++)
+            {
+              SearchResponse response = await lavaNode.SearchYouTubeAsync(videos[i].Title).ConfigureAwait(false);
+              LavaTrack track = response.Tracks.FirstOrDefault();
+              player.Queue.Enqueue(track);
+              if (!playFirst)
+              {
+                playFirst = true;
+                await player.PlayAsync(player.Queue.FirstOrDefault()).ConfigureAwait(false);
+                await Context.Channel.SendMessageAsync($":arrow_forward:: {track.Title}\n{track.Url}").ConfigureAwait(false);
+              }
+            }
+            await Context.Channel.SendMessageAsync($":white_check_mark: Playlist has been added to the queue.").ConfigureAwait(false);
+          }
+          else
+          {
+            player.Queue.Enqueue(tracks.FirstOrDefault());
+            await player.PlayAsync((PlayArgs args) =>
+            {
+              args.Track = player.Queue.FirstOrDefault();
+              if (seconds != -1)
+                args.StartTime = TimeSpan.FromSeconds(seconds);
+            }).ConfigureAwait(false);
+            await Context.Channel.SendMessageAsync($":arrow_forward:: {tracks.FirstOrDefault().Title}\n{tracks.FirstOrDefault().Url}").ConfigureAwait(false);
+          }
         }
       }
       catch (Exception ex)
       {
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, Play", ex.Message)).ConfigureAwait(false);
+        Console.WriteLine(ex.Message);
       }
     }
     [Command("Leave")]
-    public async Task LeaveAsync()
+    public async Task Leave()
     {
       try
       {
         LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+        if (player == null)
+        {
+          await Context.Channel.SendMessageAsync("I'm not connected to a voice channel.").ConfigureAwait(false);
+          return;
+        }
 
         if (player.PlayerState is PlayerState.Playing)
           await player.StopAsync().ConfigureAwait(false);
 
         await lavaNode.LeaveAsync(player.VoiceChannel).ConfigureAwait(false);
 
-        await LoggingService.LogInformationAsync("Music", $"Bot has left. {Context.Guild.Name} - {Context.Guild.Id}").ConfigureAwait(false);
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music", "Goodbye!", Color.Blue)).ConfigureAwait(false);
-      }
-      catch (InvalidOperationException ex)
-      {
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, Leave", ex.Message)).ConfigureAwait(false);
-      }
-    }
-    [Command("List")]
-    public async Task ListAsync()
-    {
-      try
-      {
-        StringBuilder descriptionBuilder = new StringBuilder();
-
-        LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
-        if (player == null)
-        {
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, List", $"Could not aquire player.\nAre you using the bot right now? check{GlobalData.Config.DefaultPrefix}Help for info on how to use the bot.")).ConfigureAwait(false);
-          return;
-        }
-
-        if (player.PlayerState is PlayerState.Playing)
-        {
-          if (player.Queue.Count < 1 && player.Track != null)
-          {
-            await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed($"Now Playing: {player.Track.Title}", "Nothing Else Is Queued.", Color.Blue)).ConfigureAwait(false);
-            return;
-          }
-          else
-          {
-            var trackNum = 2;
-            foreach (LavaTrack track in player.Queue)
-            {
-              descriptionBuilder.Append(trackNum)
-                                .Append(": [ ")
-                                .Append(track.Title)
-                                .Append(" ] ( ")
-                                .Append(track.Url)
-                                .Append(" ) - ")
-                                .Append(track.Id)
-                                .Append('\n');
-              trackNum++;
-            }
-            await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music Playlist", $"Now Playing: [{player.Track.Title}]({player.Track.Url}) \n{descriptionBuilder}", Color.Blue)).ConfigureAwait(false);
-            return;
-          }
-        }
-        else
-        {
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, List", "Player doesn't seem to be playing anything right now. If this is an error, please Contact Snowy#0364.")).ConfigureAwait(false);
-          return;
-        }
+        await Context.Channel.SendMessageAsync(":wave:").ConfigureAwait(false);
       }
       catch (Exception ex)
       {
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, List", ex.Message)).ConfigureAwait(false);
+        Console.WriteLine(ex.Message);
+      }
+    }
+    [Command("List")]
+    [Alias(new string[] { "Queue" })]
+    public async Task List()
+    {
+      LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+      if (player == null)
+      {
+        await Context.Channel.SendMessageAsync("I'm not in a voice channel.").ConfigureAwait(false);
+        return;
+      }
+      if (player.PlayerState != PlayerState.Playing && player.PlayerState != PlayerState.Paused)
+      {
+        await Context.Channel.SendMessageAsync("I'm not playing anything.").ConfigureAwait(false);
+        return;
+      }
+      if (!(Context.User is IVoiceChannel))
+        await Context.Channel.SendMessageAsync("You must be connected to a voice channel.").ConfigureAwait(false);
+
+      int num = 1;
+
+      EmbedBuilder builder = new EmbedBuilder();
+      builder.WithTitle("Queue");
+      builder.WithColor(new Color(0xcc70ff));
+      builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+      foreach (LavaTrack track in player.Queue)
+      {
+        builder.AddField($"{EmbedHandler.NumToEmoji(num)} - {track.Title}", $"{track.Url}", false);
+        if (num++ > 9) break;
+      }
+      if(player.Queue.Count > 10)
+      builder.AddField($"**...**", $"...and {player.Queue.Count - 10} more results.", false);
+
+      await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
+      return;
+    }
+    [Command("QueueRemove")]
+    [Alias(new string[] { "QR", "Remove", "QDelete" })]
+    public async Task QRemove(int index)
+    {
+      LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+      if (player == null)
+      {
+        await Context.Channel.SendMessageAsync("I'm not in a voice channel.").ConfigureAwait(false);
+        return;
+      }
+      if ((player.PlayerState != PlayerState.Playing && player.PlayerState != PlayerState.Paused) || player.Queue.Count < 1)
+      {
+        await Context.Channel.SendMessageAsync("I'm not playing anything.").ConfigureAwait(false);
+        return;
+      }
+      if(index < 1 || index > player.Queue.Count)
+      {
+        await Context.Channel.SendMessageAsync("Please enter a valid index.").ConfigureAwait(false);
+        return;
+      }
+      player.Queue.RemoveAt(index - 1);
+
+      await Context.Message.AddReactionAsync(Emoji.Parse("👍")).ConfigureAwait(false);
+    }
+    [Command("Playing")]
+    [Alias(new string[] { "NP", "NowPlaying", "Current" })]
+    public async Task Playing()
+    {
+      LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+      if (player == null)
+      {
+        await Context.Channel.SendMessageAsync("I'm not in a voice channel.").ConfigureAwait(false);
+        return;
+      }
+      if (player.PlayerState != PlayerState.Playing && player.PlayerState != PlayerState.Paused)
+      {
+        await Context.Channel.SendMessageAsync("I'm not playing anything.").ConfigureAwait(false);
+        return;
+      }
+      await Context.Channel.SendMessageAsync($"{(player.PlayerState == PlayerState.Playing ? ":arrow_forward:" : ":pause")}Now Playing: **{player.Track.Title}**\n{player.Track.Url}").ConfigureAwait(false);
+      return;
+    }
+    [Command("Shuffle")]
+    public async Task Shuffle()
+    {
+      LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+      if (player == null)
+      {
+        await Context.Channel.SendMessageAsync("I'm not in a voice channel.").ConfigureAwait(false);
+        return;
+      }
+      if (player.PlayerState != PlayerState.Playing && player.PlayerState != PlayerState.Paused)
+      {
+        await Context.Channel.SendMessageAsync("I'm not playing anything.").ConfigureAwait(false);
         return;
       }
 
+      await Context.Channel.SendMessageAsync(":twisted_rightwards_arrows:").ConfigureAwait(false);
+      player.Queue.Shuffle();
     }
     [Command("Skip")]
-    public async Task SkipTrackAsync()
+    [Alias(new string[] { "S" })]
+    public async Task Skip()
     {
       try
       {
         LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
         if (player == null)
         {
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, List", $"Could not aquire player.\nAre you using the bot right now? check{GlobalData.Config.DefaultPrefix}Help for info on how to use the bot.")).ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync("I'm not connected to a voice channel.").ConfigureAwait(false);
+          return;
+        }
+        if (player.Track == null)
+        {
+          await Context.Channel.SendMessageAsync("No songs playing.").ConfigureAwait(false);
           return;
         }
         if (player.Queue.Count < 1)
         {
-          try
-          {
-            var currentTrack = player.Track;
-            if (currentTrack != null)
-              await LoggingService.LogInformationAsync("Music", $"Bot skipped: {currentTrack.Title}. No songs left in queue.").ConfigureAwait(false);
-            await player.StopAsync().ConfigureAwait(false);
-            await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, SkipTrack", "Track skipped. No songs left in queue." + $"\n\nDid you mean {GlobalData.Config.DefaultPrefix}Stop?")).ConfigureAwait(false);
-            return;
-          }
-          catch (Exception ex)
-          {
-            await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, Skip", ex.Message)).ConfigureAwait(false);
-            return;
-          }
+          await player.StopAsync().ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync($":track_next::stop_button: - **{player.Track.Title}**\n({player.Track.Url})").ConfigureAwait(false);
+          return;
         }
         else
         {
-          try
-          {
-            var currentTrack = player.Track;
-            await player.SkipAsync().ConfigureAwait(false);
-            await LoggingService.LogInformationAsync("Music", $"Bot skipped: {currentTrack.Title}").ConfigureAwait(false);
-            await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music Skip", $"I have successfully skiped {currentTrack.Title}", Color.Blue)).ConfigureAwait(false);
-            return;
-          }
-          catch (Exception ex)
-          {
-            await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, Skip", ex.Message)).ConfigureAwait(false);
-            return;
-          }
+          await player.SkipAsync(new TimeSpan(0, 0, 0, 1, 0)).ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync($":track_next: - **{player.Track.Title}**\n({player.Track.Url})").ConfigureAwait(false);
+          return;
         }
       }
       catch (Exception ex)
       {
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, Skip", ex.Message)).ConfigureAwait(false);
-        return;
+        Console.WriteLine(ex.Message);
       }
     }
     [Command("Stop")]
-    public async Task StopAsync()
+    public async Task Stop()
     {
       try
       {
@@ -237,48 +308,47 @@ namespace SnowyBot.Modules
 
         if (player == null)
         {
-          await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, List", $"Could not aquire player.\nAre you using the bot right now? check{GlobalData.Config.DefaultPrefix}Help for info on how to use the bot.")).ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync("I'm not connected to a voice channel.").ConfigureAwait(false);
           return;
         }
 
-        /* Check if the player exists, if it does, check if it is playing.
-             If it is playing, we can stop.*/
         if (player.PlayerState is PlayerState.Playing)
-        {
           await player.StopAsync().ConfigureAwait(false);
+        else
+        {
+          await Context.Channel.SendMessageAsync("Not playing anything.").ConfigureAwait(false);
+          return;
         }
 
-        await LoggingService.LogInformationAsync("Music", "Bot has stopped playback.").ConfigureAwait(false);
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Music Stop", "I Have stopped playback & the playlist has been cleared.", Color.Blue)).ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync(":stop_button: Stopped playback.").ConfigureAwait(false);
         return;
       }
       catch (Exception ex)
       {
-        await Context.Channel.SendMessageAsync(null, false, EmbedHandler.CreateErrorEmbed("Music, Stop", ex.Message)).ConfigureAwait(false);
-        return;
+        Console.WriteLine(ex.Message);
       }
     }
     [Command("Volume")]
-    public async Task<string> SetVolumeAsync(int volume)
+    public async Task Volume(int volume)
     {
       if (volume > 150 || volume <= 0)
       {
-        return "Volume must be between 1 and 150.";
+        await Context.Channel.SendMessageAsync("Volume must be between 1 and 150.").ConfigureAwait(false);
+        return;
       }
       try
       {
         var player = lavaNode.GetPlayer(Context.Guild);
+        await Context.Channel.SendMessageAsync(volume > player.Volume ? ":loud_sound::arrow_double_up:" : volume < player.Volume ? ":sound::arrow_double_down:" : ":sound:").ConfigureAwait(false);
         await player.UpdateVolumeAsync((ushort)volume).ConfigureAwait(false);
-        await LoggingService.LogInformationAsync("Music", $"Bot Volume set to: {volume}").ConfigureAwait(false);
-        return $"Volume has been set to {volume}.";
       }
-      catch (InvalidOperationException ex)
+      catch (Exception ex)
       {
-        return ex.Message;
+        Console.WriteLine(ex.Message);
       }
     }
     [Command("Pause")]
-    public async Task<string> PauseAsync(IGuild guild)
+    public async Task Pause()
     {
       try
       {
@@ -286,23 +356,23 @@ namespace SnowyBot.Modules
         if (!(player.PlayerState is PlayerState.Playing))
         {
           await player.PauseAsync().ConfigureAwait(false);
-          return "There is nothing to pause.";
+          await Context.Channel.SendMessageAsync("There is nothing to pause.").ConfigureAwait(false);
         }
         if (player.PlayerState is PlayerState.Paused)
         {
           await player.PauseAsync().ConfigureAwait(false);
-          return "Already paused.";
+          await Context.Channel.SendMessageAsync("Already paused.").ConfigureAwait(false);
         }
         await player.PauseAsync().ConfigureAwait(false);
-        return $"**Paused:** {player.Track.Title}.";
+        await Context.Channel.SendMessageAsync($"**:pause_button:** {player.Track.Title}.").ConfigureAwait(false);
       }
-      catch (InvalidOperationException ex)
+      catch (Exception ex)
       {
-        return ex.Message;
+        Console.WriteLine(ex.Message);
       }
     }
     [Command("Resume")]
-    public async Task<string> ResumeAsync(IGuild guild)
+    public async Task Resume()
     {
       try
       {
@@ -311,28 +381,113 @@ namespace SnowyBot.Modules
         if (player.PlayerState is PlayerState.Paused)
           await player.ResumeAsync().ConfigureAwait(false);
 
-        return $"**Resumed:** {player.Track.Title}";
+        await Context.Channel.SendMessageAsync($":arrow_forward: Resumed playback.").ConfigureAwait(false);
       }
-      catch (InvalidOperationException ex)
+      catch (Exception ex)
       {
-        return ex.Message;
+        Console.Write(ex.Message);
+      }
+    }
+    [Command("Seek")]
+    [Alias(new string[] { "Find" })]
+    public async Task Seek([Remainder] string time)
+    {
+      string[] formats = new string[] { @"s", @"ss", @"m\:ss", @"mm\:ss", @"h\:mm\:ss", @"hh\:mm\:ss" };
+
+      bool valid = TimeSpan.TryParseExact(time, formats, null, out TimeSpan timespan);
+
+      LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+      if (timespan > player.Track.Duration)
+      {
+        await Context.Channel.SendMessageAsync("Time extends beyond video length.").ConfigureAwait(false);
+        return;
+      }
+
+      if (!valid)
+      {
+        await Context.Channel.SendMessageAsync("Incorrect time format.").ConfigureAwait(false);
+        return;
+      }
+
+      if (!player.Track.CanSeek)
+      {
+        await Context.Channel.SendMessageAsync("Cannot seek in this track.").ConfigureAwait(false);
+        return;
+      }
+
+      await player.SeekAsync(timespan).ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync($":mag_right: **{time}**").ConfigureAwait(false);
+    }
+    [Command("Jump")]
+    public async Task Jump([Remainder] string time)
+    {
+      string[] formats = new string[] { @"s", @"ss", @"m\:ss", @"mm\:ss", @"h\:mm\:ss", @"hh\:mm\:ss" };
+
+      bool valid = TimeSpan.TryParseExact(time, formats, null, out TimeSpan timespan);
+
+      LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
+
+      if (!valid)
+      {
+        await Context.Channel.SendMessageAsync("Incorrect time format.").ConfigureAwait(false);
+        return;
+      }
+
+      if (timespan > player.Track.Duration || timespan > (player.Track.Duration - player.Track.Position))
+      {
+        await Context.Channel.SendMessageAsync("Time extends beyond video length.").ConfigureAwait(false);
+        return;
+      }
+
+      if (!player.Track.CanSeek)
+      {
+        await Context.Channel.SendMessageAsync("Cannot jump in this track.").ConfigureAwait(false);
+        return;
+      }
+
+      await player.SeekAsync(player.Track.Position + timespan).ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync($":mag_right: **{player.Track.Position + timespan}**").ConfigureAwait(false);
+    }
+    [Command("Loop")]
+    public async Task Loop()
+    {
+      if (!DiscordService.tempGuildData.TryGetValue(lavaNode.GetPlayer(Context.Guild), out bool l))
+      {
+        DiscordService.tempGuildData.GetOrAdd(lavaNode.GetPlayer(Context.Guild), true);
+        await Context.Channel.SendMessageAsync($"Loop enabled! :repeat:").ConfigureAwait(false);
+      }
+      else
+      {
+        DiscordService.tempGuildData.TryGetValue(lavaNode.GetPlayer(Context.Guild), out bool loop);
+        DiscordService.tempGuildData.TryUpdate(lavaNode.GetPlayer(Context.Guild), !loop, loop);
+        await Context.Channel.SendMessageAsync($"Loop {(!loop ? "enabled. :repeat:" : "disabled. :arrow_right_hook:")}").ConfigureAwait(false);
       }
     }
     public async Task TrackEnded(TrackEndedEventArgs args)
     {
-      if (!args.Player.Queue.TryDequeue(out var queueable))
+      if (DiscordService.tempGuildData.TryGetValue(args.Player, out bool loop) && loop && args.Reason == TrackEndReason.Finished)
       {
+        LavaTrack loopTrack = args.Player.Queue.FirstOrDefault();
+        await args.Player.PlayAsync(loopTrack).ConfigureAwait(false);
         return;
       }
 
-      if (!(queueable is LavaTrack track))
-      {
-        await args.Player.TextChannel.SendMessageAsync("Next item in queue is not a track.").ConfigureAwait(false);
+      if (args.Reason == TrackEndReason.Stopped)
         return;
-      }
+
+      if (args.Reason == TrackEndReason.Replaced)
+        return;
+
+      args.Player.Queue.TryDequeue(out LavaTrack value);
+
+      if (!args.Player.Queue.Any())
+        return;
+
+      LavaTrack track = args.Player.Queue.FirstOrDefault();
 
       await args.Player.PlayAsync(track).ConfigureAwait(false);
-      await args.Player.TextChannel.SendMessageAsync(null, false, EmbedHandler.CreateBasicEmbed("Now Playing", $"[{track.Title}]({track.Url})", Color.Blue)).ConfigureAwait(false);
+      await args.Player.TextChannel.SendMessageAsync($":arrow_forward: - **{track.Title}**\n{track.Url}").ConfigureAwait(false);
     }
   }
 }

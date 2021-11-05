@@ -45,3 +45,8 @@ C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Microsoft.EntityFrameworkCore.Design.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Discord.InteractivityAddon.Labs.dll
 C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\config.json
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Google.Apis.dll
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Google.Apis.Auth.PlatformServices.dll
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Google.Apis.Auth.dll
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Google.Apis.Core.dll
+C:\Users\nibbl\Documents\My Games\Terraria\ModLoader\Mod Sources\SnowyBotCSharp\bin\Debug\netcoreapp3.1\Google.Apis.YouTube.v3.dll

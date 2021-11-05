@@ -80,7 +80,7 @@ namespace SnowyBot.Handlers
       builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", DiscordService.ownerAvatarURL);
+      builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
       return builder.Build();
     }
 
