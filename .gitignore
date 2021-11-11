@@ -1,9 +1,8 @@
-
 .vs/*
-SnowyBot/obj/*
-SnowyBot/bin/*
+obj/*
+bin/*
 *.json
-/SnowyBot/LavaLink/*
-/SnowyBot/Properties/*
-SnowyBot/SnowyBot.csproj.user
-
+LavaLink/*
+Properties/*
+StableRelease/*
+SnowyBot.csproj.user
