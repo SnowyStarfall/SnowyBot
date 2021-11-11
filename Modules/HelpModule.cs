@@ -64,7 +64,7 @@ namespace SnowyBot.Modules
             builder = new EmbedBuilder();
             builder.WithThumbnailUrl("https://i.vgy.me/KOU3eR.png");
             builder.WithTitle("Play");
-            builder.WithDescription("Plays music.\n- !play <link | search> \n- !play <link | search> <start time hh:mm:ss>");
+            builder.WithDescription("Plays music.\n- !play <link | search>");
             builder.WithCurrentTimestamp();
             builder.WithColor(new Color(0xcc70ff));
             builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
@@ -262,7 +262,7 @@ namespace SnowyBot.Modules
             builder = new EmbedBuilder();
             builder.WithThumbnailUrl("https://i.vgy.me/KOU3eR.png");
             builder.WithTitle("Char Dlete");
-            builder.WithDescription("Deletes a character\n- !char delete <name>");
+            builder.WithDescription("Deletes a character.\n- !char delete <name>");
             builder.WithCurrentTimestamp();
             builder.WithColor(new Color(0xcc70ff));
             builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");

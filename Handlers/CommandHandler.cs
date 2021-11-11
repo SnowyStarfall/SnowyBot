@@ -368,7 +368,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -425,7 +426,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -482,7 +484,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -539,7 +542,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -596,7 +600,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -653,7 +658,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -710,7 +716,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -767,7 +774,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -824,7 +832,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -881,7 +890,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -911,13 +921,8 @@ namespace SnowyBot.Handlers
           if (avatarResult.IsSuccess)
           {
             await infoMessage11.DeleteAsync().ConfigureAwait(false);
-            try
-            {
-              await avatarResult.Value.DeleteAsync().ConfigureAwait(false);
-            }
-            catch { }
 
-            await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.AvatarURL, avatarResult.Value.Content).ConfigureAwait(false);
+            await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.AvatarURL, avatarResult.Value.Attachments.First().Url).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
             ComponentBuilder builder = new ComponentBuilder();
@@ -938,7 +943,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
@@ -968,13 +974,8 @@ namespace SnowyBot.Handlers
           if (referenceResult.IsSuccess)
           {
             await infoMessage12.DeleteAsync().ConfigureAwait(false);
-            try
-            {
-              await referenceResult.Value.DeleteAsync().ConfigureAwait(false);
-            }
-            catch { }
 
-            await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.ReferenceURL, referenceResult.Value.Content).ConfigureAwait(false);
+            await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.ReferenceURL, referenceResult.Value.Attachments.First().Url).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
             ComponentBuilder builder = new ComponentBuilder();
@@ -995,7 +996,8 @@ namespace SnowyBot.Handlers
             eBuilder.AddField("Weight", character.Weight, true);
             eBuilder.AddField("Orientation", character.Orientation, true);
             eBuilder.AddField("Created", character.CreationDate, true);
-            eBuilder.WithImageUrl(character.ReferenceURL);
+            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+              eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
             eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
