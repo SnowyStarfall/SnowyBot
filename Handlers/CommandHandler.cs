@@ -113,6 +113,7 @@ namespace SnowyBot.Handlers
     }
     private async Task HandleComponent(SocketMessageComponent component)
     {
+      // This needs updating.
       // data[0] = User ID
       // data[1] = Character ID
       // data[2] = Channel ID
