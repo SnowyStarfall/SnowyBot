@@ -10,6 +10,11 @@ namespace SnowyBot.Modules
 {
   public class HelpModule : ModuleBase
   {
+    [Command ("Invite")]
+    public async Task Invite()
+    {
+      await Context.Channel.SendMessageAsync("https://discord.com/api/oauth2/authorize?client_id=814780665018318878&permissions=8&scope=bot").ConfigureAwait(false);
+    }
     [Command("Help")]
     public async Task Help([Remainder] string command = null)
     {

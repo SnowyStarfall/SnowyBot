@@ -37,6 +37,7 @@ namespace SnowyBot.Handlers
       client.MessageReceived += Client_MessageRecieved;
       client.InteractionCreated += Client_InteractionCreated;
       client.ReactionAdded += Client_ReactionAdded;
+      client.ReactionRemoved += Client_ReactionRemoved;
     }
 
     private async Task Client_MessageRecieved(SocketMessage arg)
@@ -105,7 +106,9 @@ namespace SnowyBot.Handlers
     }
     private async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
     {
-      Console.WriteLine("Reaction added " + new NotImplementedException());
+    }
+    private async Task Client_ReactionRemoved(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
+    {
     }
     private async Task HandleSlash(SocketSlashCommand command)
     {

@@ -8,18 +8,14 @@ using System;
 using System.Threading.Tasks;
 using Victoria;
 using System.Linq;
-using System.Threading;
 using SnowyBot.Modules;
 using SnowyBot.Database;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Services;
-using Google.Apis.Upload;
-using Google.Apis.Util.Store;
-using Google.Apis.YouTube.v3;
-using Google.Apis.YouTube.v3.Data;
-using Discord.Rest;
 using YoutubeExplode;
 using System.Collections.Concurrent;
+using SnowyBot.Structs;
+using System.IO;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace SnowyBot.Services
 {
@@ -33,7 +29,7 @@ namespace SnowyBot.Services
 
     public static readonly InteractivityService interactivity;
 
-    public static readonly GlobalData globalData;
+    public static BotConfig config;
 
     public static readonly ServiceProvider provider;
     public static readonly ConfigModule configService;
@@ -43,6 +39,7 @@ namespace SnowyBot.Services
     public static readonly FunModule funModule;
     public static readonly LavalinkModule audioModule;
     public static readonly CharacterModule characterModule;
+    public static readonly RoleModule roleModule;
 
     public static ConcurrentDictionary<LavaPlayer, bool> tempGuildData;
 
@@ -59,7 +56,6 @@ namespace SnowyBot.Services
 
       interactivity = provider.GetRequiredService<InteractivityService>();
 
-      globalData = provider.GetRequiredService<GlobalData>();
       configService = provider.GetRequiredService<ConfigModule>();
       commands = provider.GetRequiredService<CommandService>();
       playlists = provider.GetRequiredService<PlaylistService>();
@@ -67,6 +63,7 @@ namespace SnowyBot.Services
       funModule = provider.GetRequiredService<FunModule>();
       audioModule = provider.GetRequiredService<LavalinkModule>();
       characterModule = provider.GetRequiredService<CharacterModule>();
+      roleModule = provider.GetRequiredService<RoleModule>();
 
       // Lavalink Events //
       lavaNode.OnLog += LogAsync;
@@ -79,7 +76,7 @@ namespace SnowyBot.Services
 
     public static async Task InitializeAsync()
     {
-      await globalData.InitializeAsync().ConfigureAwait(false);
+      await ConfigAsync().ConfigureAwait(false);
       provider.GetRequiredService<CommandHandler>();
       provider.GetRequiredService<EmbedHandler>();
       await provider.GetRequiredService<StartupService>().StartAsync().ConfigureAwait(false);
@@ -96,6 +93,14 @@ namespace SnowyBot.Services
     private static async Task LogAsync(LogMessage logMessage)
     {
       await LoggingService.LogAsync(logMessage.Source, logMessage.Severity, logMessage.Message).ConfigureAwait(false);
+    }
+    private static async Task ConfigAsync()
+    {
+      await Task.Run(() =>
+      {
+        string json = File.ReadAllText("config.json", new UTF8Encoding(false));
+        config = JsonConvert.DeserializeObject<BotConfig>(json);
+      }).ConfigureAwait(false);
     }
     private static ServiceProvider ConfigureServices()
     {
@@ -127,18 +132,13 @@ namespace SnowyBot.Services
           ResumeTimeout = TimeSpan.FromSeconds(120),
           SelfDeaf = true
         })
-        .AddSingleton(new YouTubeService(new BaseClientService.Initializer()
-        {
-          ApiKey = "AIzaSyCoFA16Gt7lHoX4rJHVOBH6Jh77xW6Je78",
-          ApplicationName = "SnowyBot",
-        }))
         .AddSingleton<CommandHandler>()
         .AddSingleton<EmbedHandler>()
         .AddSingleton<FunModule>()
-        .AddSingleton<CharacterModule>()
-        .AddSingleton<ConfigModule>()
         .AddSingleton<LavalinkModule>()
-        .AddSingleton<GlobalData>()
+        .AddSingleton<CharacterModule>()
+        .AddSingleton<RoleModule>()
+        .AddSingleton<ConfigModule>()
         .AddSingleton<StartupService>()
         .AddDbContext<GuildContext>()
         .AddSingleton<Guilds>()

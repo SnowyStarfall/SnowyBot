@@ -16,16 +16,6 @@ namespace SnowyBot.Database
       context = _context;
     }
 
-    public async Task ModifyGuildPrefix(ulong id, string prefix)
-    {
-      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
-      if (guild == null)
-        context.Add(new Guild { ID = id, Prefix = prefix });
-      else
-        guild.Prefix = prefix;
-
-      await context.SaveChangesAsync().ConfigureAwait(false);
-    }
     public async Task<string> GetGuildPrefix(ulong id)
     {
       var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
@@ -48,39 +38,61 @@ namespace SnowyBot.Database
 
       return await Task.FromResult(prefix).ConfigureAwait(false);
     }
-    //public async Task ModifyRoleMessage(ulong id, string text, CommandContext con)
-    //{
-    //  var guild = DiscordService.client.GetGuild(id);
+    public async Task ModifyGuildPrefix(ulong id, string prefix)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = prefix });
+      else
+        guild.Prefix = prefix;
 
-    //  var channelID = await context.Guilds.AsAsyncEnumerable()
-    //                         .Where(x => x.ID == id)
-    //                         .Select(x => x.RoleChannel)
-    //                         .FirstOrDefaultAsync()
-    //                         .ConfigureAwait(false);
-    //  var messageID = await context.Guilds.AsAsyncEnumerable()
-    //                         .Where(x => x.ID == id)
-    //                         .Select(x => x.RoleMessage)
-    //                         .FirstOrDefaultAsync()
-    //                         .ConfigureAwait(false);
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task AddReactiveMessage(ulong guildID, ulong channelID, ulong messageID)
+    {
+      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"{channelID},{messageID};|" });
+      if (guild.Roles.Contains($"{channelID},{messageID}"))
+        return;
+      guild.Roles += $"{channelID},{messageID};|";
+    }
+    public async Task<bool> ExistsReactiveMessage(ulong guildID, ulong channelID, ulong messageID)
+    {
+      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
+      if (guild == null)
+      {
+        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = "" });
+        return false;
+      }
+      return guild.Roles.Contains($"{channelID},{messageID}");
+    }
+    public async Task RemoveReactiveMessage(ulong guildID, ulong channelID, ulong messageID)
+    {
+      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"" });
+      if (!guild.Roles.Contains($"{channelID},{messageID}"))
+        return;
+      int index1 = guild.Roles.IndexOf($"{channelID},{messageID}");
+      int index2 = guild.Roles.IndexOf("|", index1);
+      guild.Roles = guild.Roles.Remove(index1, index2 - index1);
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task AddReactiveRole(ulong guildID, ulong channelID, ulong messageID, ulong roleID, ulong emoteID)
+    {
+      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"{channelID},{messageID};{roleID},{emoteID}|" });
+      if (!guild.Roles.Contains($"{channelID},{messageID}"))
+        return;
+      int index1 = guild.Roles.IndexOf($"{channelID},{messageID}");
+      int index2 = guild.Roles.IndexOf("|", index1);
+      int index3 = guild.Roles.IndexOf($"{roleID},{emoteID}", index1);
+      if (index3 == -1 || index3 > index2)
+        guild.Roles = guild.Roles.Insert(index2 - 1, $"{roleID},{emoteID}");
 
-    //  var channel = con.Guild.GetChannelAsync(channelID) as IMessageChannel;
-    //  var message = channel.GetMessageAsync(messageID) as IUserMessage;
 
-    //  await message.ModifyAsync((MessageProperties properties) => properties.Content = text).ConfigureAwait(false);
-    //}
-    //public async Task<bool> IsRoleMessage(ulong id)
-    //{
-    //  var messageID = await context.Guilds.AsAsyncEnumerable()
-    //                                      .Where(x => x.ID == id)
-    //                                      .Select(x => x.RoleMessage)
-    //                                      .FirstOrDefaultAsync()
-    //                                      .ConfigureAwait(false);
-
-    //  return messageID > 0;
-    //}
-    //public async Task CreateRoleMessage(ulong id)
-    //{
-
-    //}
+    }
   }
 }

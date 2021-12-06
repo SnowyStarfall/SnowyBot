@@ -18,11 +18,8 @@ namespace SnowyBot.Database
     public ulong ID { get; set; }
     // Command prefix for the Guild
     public string Prefix { get; set; }
-    //// Contains the channel ID's for the Role Messages
-    //public string RoleChannel { get; set; }
-    //// Contains the message ID's for the Role Messages
-    //public string RoleMessage { get; set; }
-    //// Contains the role-emoji pairs for the React Roles
-    //public string Roles { get; set; }
+    // Reactive Roles string for the Guild
+    // channel,message;role,emoji:role,emoji|channel,message;role,emoji:role,emoji| 
+    public string Roles { get; set; }
   }
 }

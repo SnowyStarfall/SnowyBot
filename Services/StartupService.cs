@@ -24,28 +24,11 @@ namespace SnowyBot.Services
       client = _client;
       commands = _commands;
       guilds = _guilds;
-
-      //DiscordService.client.ReactionAdded += ReactionAdded;
-      //DiscordService.client.ReactionRemoved += ReactionRemoved;
     }
 
-    //private Task ReactionAdded(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
-    //{
-    //  if (!guilds.IsRoleMessage(arg1.Id).Result)
-    //  {
-    //    return Task.CompletedTask;
-    //  }
-    //  else
-    //  {
-
-    //  }
-    //}
-    //private Task ReactionRemoved(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
-    //{
-    //}
     public async Task StartAsync()
     {
-      await client.LoginAsync(TokenType.Bot, GlobalData.Config.DiscordToken).ConfigureAwait(false);
+      await client.LoginAsync(TokenType.Bot, DiscordService.config.DiscordToken).ConfigureAwait(false);
       await client.StartAsync().ConfigureAwait(false);
 
       await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider).ConfigureAwait(false);

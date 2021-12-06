@@ -73,9 +73,28 @@ namespace SnowyBot.Modules
 
         if (videos == null)
         {
-          SearchResponse search = Uri.IsWellFormedUriString(query, UriKind.Absolute) ? await lavaNode.SearchAsync(SearchType.YouTube, query).ConfigureAwait(false)
-                                                                                     : await lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
+          //if(!Uri.IsWellFormedUriString(query, UriKind.Absolute))
+          //  return;
+
+          SearchResponse YouTube = await lavaNode.SearchYouTubeAsync(query).ConfigureAwait(false);
+          SearchResponse YouTubeMusic = await lavaNode.SearchAsync(SearchType.YouTubeMusic, query).ConfigureAwait(false);
+          string[] soundcloudRoughParse = query.Split("/");
+          string soundcloudRefinedParse = soundcloudRoughParse.Last();
+          string soundcloudSearch = soundcloudRefinedParse.Replace("-", " ");
+          SearchResponse SoundCloud = await lavaNode.SearchSoundCloudAsync(soundcloudSearch).ConfigureAwait(false);
+          SearchResponse Direct = await lavaNode.SearchAsync(SearchType.Direct, query).ConfigureAwait(false);
+
+          SearchResponse search = YouTube.Status != SearchStatus.LoadFailed && YouTube.Status != SearchStatus.NoMatches ? YouTube :
+                                  YouTubeMusic.Status != SearchStatus.LoadFailed && YouTubeMusic.Status != SearchStatus.NoMatches ? YouTubeMusic :
+                                  SoundCloud.Status != SearchStatus.LoadFailed && SoundCloud.Status != SearchStatus.NoMatches ? SoundCloud :
+                                  Direct;
+
           if (search.Status == SearchStatus.NoMatches)
+          {
+            await Context.Channel.SendMessageAsync($"Search failed. :x:").ConfigureAwait(false);
+            return;
+          }
+          if (search.Status == SearchStatus.LoadFailed)
           {
             await Context.Channel.SendMessageAsync($"No results for {query}. :x:").ConfigureAwait(false);
             return;

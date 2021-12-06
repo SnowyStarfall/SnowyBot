@@ -148,7 +148,7 @@ namespace SnowyBot.Modules
         return;
       }
 
-      await Context.Channel.SendMessageAsync("Please enter a orientation.").ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync("Please enter an orientation.").ConfigureAwait(false);
 
       var orientationResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
@@ -162,7 +162,7 @@ namespace SnowyBot.Modules
         return;
       }
 
-      await Context.Channel.SendMessageAsync("Please enter a description.").ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync("Please enter a description. This can be edited later.").ConfigureAwait(false);
 
       var descriptionResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
