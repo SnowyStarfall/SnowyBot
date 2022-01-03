@@ -48,7 +48,9 @@ namespace SnowyBot.Services
         "audio" => "ADIO",
         "gateway" => "GTWY",
         "bot" => "RBOT",
-        _ => src,
+        "rest" => "REST",
+        "timer" => "TIMR",
+        _ => src
       };
     }
     private static string GetSeverityString(LogSeverity severity)
@@ -59,9 +61,9 @@ namespace SnowyBot.Services
         LogSeverity.Error => "EROR",
         LogSeverity.Warning => "WARN",
         LogSeverity.Info => "INFO",
-        LogSeverity.Debug => "DBUG",
         LogSeverity.Verbose => "VERB",
-        _ => "UNKN",
+        LogSeverity.Debug => "DBUG",
+        _ => "UNKN"
       };
     }
     private static ConsoleColor GetConsoleColor(LogSeverity severity)
@@ -74,7 +76,7 @@ namespace SnowyBot.Services
         LogSeverity.Info => ConsoleColor.Green,
         LogSeverity.Verbose => ConsoleColor.Blue,
         LogSeverity.Debug => ConsoleColor.DarkBlue,
-        _ => ConsoleColor.White,
+        _ => ConsoleColor.White
       };
     }
   }

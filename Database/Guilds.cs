@@ -15,7 +15,13 @@ namespace SnowyBot.Database
     {
       context = _context;
     }
-
+    public async Task<Guild> GetGuild(ulong id)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = "!" });
+      return guild;
+    }
     public async Task<string> GetGuildPrefix(ulong id)
     {
       var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
@@ -93,6 +99,42 @@ namespace SnowyBot.Database
         guild.Roles = guild.Roles.Insert(index2 - 1, $"{roleID},{emoteID}");
 
 
+    }
+    public async Task DeleteMusic(ulong id, ICommandContext commandContext)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = "!" });
+      guild.DeleteMusic = !guild.DeleteMusic;
+      string response = guild.DeleteMusic ? "Music posts will be deleted." : "Music posts will not be deleted.";
+      await commandContext.Channel.SendMessageAsync(response).ConfigureAwait(false);
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task CreateWelcomeMessage(ulong id, ulong channelID, string message)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = "!" });
+      guild.WelcomeMessage = channelID.ToString() + ";" + message;
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task<string> GetWelcomeMessage(ulong id)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      return guild.WelcomeMessage;
+    }
+    public async Task CreateGoodbyeMessage(ulong id, ulong channelID, string message)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = "!" });
+      guild.GoodbyeMessage = channelID.ToString() + ";" + message;
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task<string> GetGoodbyeMessage(ulong id)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      return guild.GoodbyeMessage;
     }
   }
 }

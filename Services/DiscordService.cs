@@ -16,6 +16,8 @@ using SnowyBot.Structs;
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
+using System.Timers;
+using Discord.Interactions;
 
 namespace SnowyBot.Services
 {
@@ -31,10 +33,15 @@ namespace SnowyBot.Services
 
     public static BotConfig config;
 
+    public static readonly Guilds guilds;
+
+    public static readonly CommandHandler commandHandler;
+
     public static readonly ServiceProvider provider;
     public static readonly ConfigModule configService;
     public static readonly CommandService commands;
     public static readonly PlaylistService playlists;
+    public static readonly InteractionService interaction;
 
     public static readonly FunModule funModule;
     public static readonly LavalinkModule audioModule;
@@ -42,6 +49,10 @@ namespace SnowyBot.Services
     public static readonly RoleModule roleModule;
 
     public static ConcurrentDictionary<LavaPlayer, bool> tempGuildData;
+    public static ConcurrentDictionary<SocketMessage, int> tempMessageData;
+
+    public static Timer statusTimer;
+    public static Timer secondTimer;
 
     static DiscordService()
     {
@@ -56,6 +67,10 @@ namespace SnowyBot.Services
 
       interactivity = provider.GetRequiredService<InteractivityService>();
 
+      guilds = provider.GetRequiredService<Guilds>();
+
+      commandHandler = provider.GetRequiredService<CommandHandler>();
+
       configService = provider.GetRequiredService<ConfigModule>();
       commands = provider.GetRequiredService<CommandService>();
       playlists = provider.GetRequiredService<PlaylistService>();
@@ -66,12 +81,28 @@ namespace SnowyBot.Services
       roleModule = provider.GetRequiredService<RoleModule>();
 
       // Lavalink Events //
-      lavaNode.OnLog += LogAsync;
+      lavaNode.OnLog += Log;
       lavaNode.OnTrackEnded += audioModule.TrackEnded;
 
       // Discord Events //
-      client.Ready += ReadyAsync;
-      client.Log += LogAsync;
+      client.Ready += Client_Ready;
+      client.Log += Log;
+      client.UserJoined += Client_UserJoined;
+      client.UserLeft += Client_UserLeft;
+      client.MessageUpdated += commandHandler.Client_MessageUpdated;
+
+      statusTimer = new Timer(30000);
+      statusTimer.Elapsed += audioModule.StatusTumer_Elapsed;
+      statusTimer.Interval = 30000;
+      statusTimer.Enabled = true;
+
+      secondTimer = new Timer(1000);
+      secondTimer.Elapsed += SecondTimer_Elapsed;
+
+      GC.KeepAlive(statusTimer);
+
+      tempGuildData = new();
+      tempMessageData = new();
     }
 
     public static async Task InitializeAsync()
@@ -80,17 +111,14 @@ namespace SnowyBot.Services
       provider.GetRequiredService<CommandHandler>();
       provider.GetRequiredService<EmbedHandler>();
       await provider.GetRequiredService<StartupService>().StartAsync().ConfigureAwait(false);
-
-      tempGuildData = new ConcurrentDictionary<LavaPlayer, bool>();
-
       await Task.Delay(-1).ConfigureAwait(false);
     }
-    private static async Task ReadyAsync()
+    private static async Task Client_Ready()
     {
       await lavaNode.ConnectAsync().ConfigureAwait(false);
       await client.SetGameAsync($"music for {lavaNode.Players.Count()} servers.").ConfigureAwait(false);
     }
-    private static async Task LogAsync(LogMessage logMessage)
+    private static async Task Log(LogMessage logMessage)
     {
       await LoggingService.LogAsync(logMessage.Source, logMessage.Severity, logMessage.Message).ConfigureAwait(false);
     }
@@ -114,7 +142,7 @@ namespace SnowyBot.Services
         .AddSingleton(new CommandService(new CommandServiceConfig()
         {
           LogLevel = LogSeverity.Verbose,
-          DefaultRunMode = RunMode.Async,
+          DefaultRunMode = Discord.Commands.RunMode.Async,
           CaseSensitiveCommands = false
         }))
         .AddSingleton<InteractivityService>()
@@ -147,6 +175,64 @@ namespace SnowyBot.Services
         .AddSingleton<PlaylistService>()
         .AddSingleton<YoutubeClient>()
         .BuildServiceProvider();
+    }
+    private static async Task Client_UserJoined(SocketGuildUser arg)
+    {
+      string message = await guilds.GetWelcomeMessage(arg.Guild.Id).ConfigureAwait(false);
+      if (message == null)
+        return;
+      string[] split = message.Split(';');
+      if (split[0] == "0")
+        return;
+      split[1] = split[1].Replace("$MENTION$", arg.Mention);
+
+      IMessageChannel channel = null;
+
+      foreach (SocketGuildChannel channels in arg.Guild.Channels)
+      {
+        if (channels.Id == ulong.Parse(split[0]))
+          channel = channels as IMessageChannel;
+      }
+
+      if (channel == null)
+        return;
+
+      await channel.SendMessageAsync(split[1]).ConfigureAwait(false);
+    }
+    private static async Task Client_UserLeft(SocketGuild arg1, SocketUser arg2)
+    {
+      string message = await guilds.GetGoodbyeMessage(arg1.Id).ConfigureAwait(false);
+      if (message == null)
+        return;
+      string[] split = message.Split(';');
+      if (split[0] == "0")
+        return;
+      split[1] = split[1].Replace("$MENTION$", arg2.Mention);
+
+      IMessageChannel channel = null;
+
+      foreach (SocketGuildChannel channels in arg1.Channels)
+      {
+        if (channels.Id == ulong.Parse(split[0]))
+          channel = channels as IMessageChannel;
+      }
+
+      if (channel == null)
+        return;
+
+      await channel.SendMessageAsync(split[1]).ConfigureAwait(false);
+    }
+    private static void SecondTimer_Elapsed(object sender, ElapsedEventArgs e)
+    {
+      // Message cache handling
+      if (tempMessageData.IsEmpty)
+        return;
+      for(int i = 0; i < tempMessageData.Count; i++)
+      {
+        tempMessageData.TryUpdate(tempMessageData.ElementAt(i).Key, tempMessageData.ElementAt(i).Value - 1, tempMessageData.ElementAt(i).Value);
+        if (tempMessageData.ElementAt(i).Value <= 0)
+          tempMessageData.TryRemove(tempMessageData.ElementAt(i));
+      }
     }
   }
 }

@@ -21,5 +21,11 @@ namespace SnowyBot.Database
     // Reactive Roles string for the Guild
     // channel,message;role,emoji:role,emoji|channel,message;role,emoji:role,emoji| 
     public string Roles { get; set; }
+    // If the bot should delete music posts five seconds after posting them
+    public bool DeleteMusic { get; set; }
+    // If the bot should greet new guild members. Empty means no.
+    public string WelcomeMessage { get; set; }
+    // If the bot should say goodbye to members. Empty means no.
+    public string GoodbyeMessage { get; set; }
   }
 }

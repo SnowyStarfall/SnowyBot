@@ -99,5 +99,20 @@ namespace SnowyBot.Handlers
              num == 10 ? "🔟" :
              "Unknown";
     }
+    public static int EmojiToNum(string emoji)
+    {
+      return emoji == "0️⃣" ? 0 :
+             emoji == "1️⃣" ? 1 :
+             emoji == "1️⃣" ? 2 :
+             emoji == "3️⃣" ? 3 :
+             emoji == "4️⃣" ? 4 :
+             emoji == "5️⃣" ? 5 :
+             emoji == "6️⃣" ? 6 :
+             emoji == "7️⃣" ? 7 :
+             emoji == "8️⃣" ? 8 :
+             emoji == "9️⃣" ? 9 :
+             emoji == "🔟" ? 10 :
+             -1;
+    }
   }
 }

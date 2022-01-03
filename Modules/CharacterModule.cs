@@ -34,11 +34,12 @@ namespace SnowyBot.Modules
       string referenceURL = null;
 
       await Context.Channel.SendMessageAsync("This feature is a work in progress. Please report any bugs to <@402246856752627713>.\n" +
-                                             "Since this is a W.I.P, please be sure to enter valid responses, or your progress will be lost.").ConfigureAwait(false);
+                                             "Please be sure to enter responses within **5 minutes** or your progress will be lost.\n" +
+                                             "**These responses can be edited later.** If you can't finish a response within **5 minutes**, don't be afraid to enter a placeholder.").ConfigureAwait(false);
 
       await Context.Channel.SendMessageAsync("Please enter a prefix.").ConfigureAwait(false);
 
-      var prefixResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var prefixResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (prefixResult.IsSuccess)
       {
@@ -46,13 +47,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a name.").ConfigureAwait(false);
 
-      var nameResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var nameResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (nameResult.IsSuccess)
       {
@@ -60,13 +61,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a gender.").ConfigureAwait(false);
 
-      var genderResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var genderResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (genderResult.IsSuccess)
       {
@@ -74,13 +75,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a sex.").ConfigureAwait(false);
 
-      var sexResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var sexResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (sexResult.IsSuccess)
       {
@@ -88,13 +89,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a species.").ConfigureAwait(false);
 
-      var speciesResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var speciesResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (speciesResult.IsSuccess)
       {
@@ -102,13 +103,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter an age.").ConfigureAwait(false);
 
-      var ageResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var ageResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (ageResult.IsSuccess)
       {
@@ -116,13 +117,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a height.").ConfigureAwait(false);
 
-      var heightResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var heightResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (heightResult.IsSuccess)
       {
@@ -130,13 +131,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a weight.").ConfigureAwait(false);
 
-      var weightResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var weightResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (weightResult.IsSuccess)
       {
@@ -144,13 +145,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter an orientation.").ConfigureAwait(false);
 
-      var orientationResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var orientationResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (orientationResult.IsSuccess)
       {
@@ -158,13 +159,13 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a description. This can be edited later.").ConfigureAwait(false);
 
-      var descriptionResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var descriptionResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (descriptionResult.IsSuccess)
       {
@@ -172,41 +173,41 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
-      await Context.Channel.SendMessageAsync("Please send an avatar picture.").ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync("Please send an avatar picture, or enter \"Skip\" to skip.").ConfigureAwait(false);
 
-      var avatarResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var avatarResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (avatarResult.IsSuccess)
       {
         if (string.Equals(avatarResult.Value.Content, "skip", StringComparison.OrdinalIgnoreCase))
-          avatarURL = "X";
+          avatarURL = "";
         else
           avatarURL = avatarResult.Value.Attachments.First().Url;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please send a reference picture, or enter \"Skip\" to skip.").ConfigureAwait(false);
 
-      var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0 || x.Content.ToLower() == "skip"), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0 || x.Content.ToLower() == "skip"), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
       if (referenceResult.IsSuccess)
       {
         if (string.Equals(referenceResult.Value.Content, "skip", StringComparison.OrdinalIgnoreCase))
-          referenceURL = "X";
+          referenceURL = "";
         else
           referenceURL = referenceResult.Value.Attachments.First().Url;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
         return;
       }
 
@@ -220,7 +221,7 @@ namespace SnowyBot.Modules
     {
       Character character = await characters.ViewCharacter(Context.User.Id, name).ConfigureAwait(false);
 
-      if(character == null)
+      if (character == null)
       {
         await Context.Channel.SendMessageAsync("Character not found. Are you sure you spelled the name correctly?").ConfigureAwait(false);
         return;
@@ -228,7 +229,8 @@ namespace SnowyBot.Modules
 
       EmbedBuilder builder = new EmbedBuilder();
       builder.WithAuthor($"{Context.User.Username}#{Context.User.Discriminator}", Context.User.GetAvatarUrl());
-      builder.WithThumbnailUrl(character.AvatarURL);
+      if (character.AvatarURL != "")
+        builder.WithThumbnailUrl(character.AvatarURL);
       builder.WithTitle(character.Name);
       builder.WithDescription(character.Description);
       builder.AddField("Prefix", character.Prefix, true);
@@ -240,11 +242,11 @@ namespace SnowyBot.Modules
       builder.AddField("Weight", character.Weight, true);
       builder.AddField("Orientation", character.Orientation, true);
       builder.AddField("Created", character.CreationDate, true);
-      if(character.ReferenceURL != "X")
+      if (character.ReferenceURL != "")
         builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+      builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Gif) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
       string[] id = character.CharacterID.Split(":");
 
@@ -301,7 +303,7 @@ namespace SnowyBot.Modules
 
       if (keyResult.IsSuccess)
       {
-        if(keyResult.Value.Content == key)
+        if (keyResult.Value.Content == key)
         {
           await characters.DeleteCharacter(character).ConfigureAwait(false);
           await Context.Channel.SendMessageAsync("Character deleted. ").ConfigureAwait(false);

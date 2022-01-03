@@ -24,7 +24,7 @@ namespace SnowyBot.Handlers
     private static CommandService commands;
     private static Guilds guilds;
     private static Characters characters;
-    private static Random random = new Random();
+    private static Random random = new();
     public int playerCount;
     public CommandHandler(DiscordSocketClient _client, CommandService _commands, IServiceProvider _provider, Guilds _guilds, Characters _characters)
     {
@@ -86,7 +86,23 @@ namespace SnowyBot.Handlers
       if (!message.HasStringPrefix(prefix, ref argPos) && !message.HasMentionPrefix(DiscordService.client.CurrentUser, ref argPos))
         return;
 
-      await commands.ExecuteAsync(context, argPos, provider, MultiMatchHandling.Best).ConfigureAwait(false);
+      IResult result = await commands.ExecuteAsync(context, argPos, provider, MultiMatchHandling.Best).ConfigureAwait(false);
+      if (result.Error == CommandError.UnknownCommand)
+      {
+        await arg.Channel.SendMessageAsync("Unknown command. You may correct your post.").ConfigureAwait(false);
+      }
+    }
+    public async Task Client_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
+    {
+      if (DateTime.Now - arg2.Timestamp >= TimeSpan.FromMinutes(1))
+        return;
+      DiscordService.tempMessageData.TryAdd(arg2, 60);
+      if (DiscordService.tempMessageData.ContainsKey(arg2))
+      {
+        await Client_MessageRecieved(arg2).ConfigureAwait(false);
+        DiscordService.tempMessageData.Remove(arg2, out int v);
+        return;
+      }
     }
     private async Task Client_InteractionCreated(SocketInteraction interaction)
     {

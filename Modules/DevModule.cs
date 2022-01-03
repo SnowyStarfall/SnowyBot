@@ -9,7 +9,7 @@ using YoutubeExplode.Playlists;
 
 namespace SnowyBot.Modules
 {
-  public class TestModule : ModuleBase
+  public class DevModule : ModuleBase
   {
     [Command("playlist")]
     [RequireOwner]

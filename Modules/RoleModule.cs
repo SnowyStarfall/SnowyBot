@@ -36,7 +36,7 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Please enter 1 or 2.").ConfigureAwait(false);
         return;
       }
 
@@ -46,26 +46,26 @@ namespace SnowyBot.Modules
       {
         await Context.Channel.SendMessageAsync("Please mention the channel which the message resides in.").ConfigureAwait(false);
 
-        var cr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+        var cr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
         if (cr1.IsSuccess)
         {
           if (!TryParseChannel(cr1.Value.Content, out ulong channelID1))
           {
-            await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+            await Context.Channel.SendMessageAsync("Please enter a valid channel mention.").ConfigureAwait(false);
             return;
           }
           channel1 = await Context.Guild.GetChannelAsync(channelID1).ConfigureAwait(false) as IMessageChannel;
         }
         else
         {
-          await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync("Please enter a response.").ConfigureAwait(false);
           return;
         }
 
         await Context.Channel.SendMessageAsync("Please provide the ID of the message.").ConfigureAwait(false);
 
-        var mr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+        var mr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
         IMessage message1 = null;
 
@@ -73,12 +73,12 @@ namespace SnowyBot.Modules
         {
           if (!ulong.TryParse(cr1.Value.Content, out ulong messageIDParsed1))
           {
-            await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+            await Context.Channel.SendMessageAsync("Please enter a valid message ID.").ConfigureAwait(false);
             return;
           }
           if (await channel1.GetMessageAsync(messageIDParsed1).ConfigureAwait(false) == null)
           {
-            await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+            await Context.Channel.SendMessageAsync("Please enter a valid message ID.").ConfigureAwait(false);
             return;
           }
           else
@@ -88,7 +88,7 @@ namespace SnowyBot.Modules
         }
         else
         {
-          await Context.Channel.SendMessageAsync("Please enter a valid response.").ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync("Please enter a response.").ConfigureAwait(false);
           return;
         }
 
@@ -97,10 +97,61 @@ namespace SnowyBot.Modules
         await Context.Channel.SendMessageAsync("Message registered!").ConfigureAwait(false);
         return;
       }
+      else
+      {
+        await Context.Channel.SendMessageAsync("Please mention the channel which the message resides in.").ConfigureAwait(false);
 
-      await Context.Channel.SendMessageAsync("Would you like to...\n`1`. Provide a preexisting message ID.\n`2`. Let me handle the post.").ConfigureAwait(false);
+        var cr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
-      var makePostResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+        if (cr1.IsSuccess)
+        {
+          if (!TryParseChannel(cr1.Value.Content, out ulong channelID1))
+          {
+            await Context.Channel.SendMessageAsync("Please enter a valid channel mention.").ConfigureAwait(false);
+            return;
+          }
+          channel1 = await Context.Guild.GetChannelAsync(channelID1).ConfigureAwait(false) as IMessageChannel;
+        }
+        else
+        {
+          await Context.Channel.SendMessageAsync("Please enter a response.").ConfigureAwait(false);
+          return;
+        }
+
+        await Context.Channel.SendMessageAsync("Please provide the ID of the message.").ConfigureAwait(false);
+
+        var mr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+
+        IMessage message1 = null;
+
+        if (cr1.IsSuccess)
+        {
+          if (!ulong.TryParse(cr1.Value.Content, out ulong messageIDParsed1))
+          {
+            await Context.Channel.SendMessageAsync("Please enter a valid message ID.").ConfigureAwait(false);
+            return;
+          }
+          if (await channel1.GetMessageAsync(messageIDParsed1).ConfigureAwait(false) == null)
+          {
+            await Context.Channel.SendMessageAsync("Please enter a valid message ID.").ConfigureAwait(false);
+            return;
+          }
+          else
+          {
+            message1 = await channel1.GetMessageAsync(messageIDParsed1).ConfigureAwait(false);
+          }
+        }
+        else
+        {
+          await Context.Channel.SendMessageAsync("Please enter a response.").ConfigureAwait(false);
+          return;
+        }
+
+        await guilds.AddReactiveMessage(Context.Guild.Id, channel1.Id, message1.Id).ConfigureAwait(false);
+
+        await Context.Channel.SendMessageAsync("Message registered!").ConfigureAwait(false);
+        return;
+      }
     }
   }
 }
