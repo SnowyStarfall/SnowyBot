@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Discord.MentionUtils;
 
 namespace SnowyBot.Handlers
 {
@@ -38,13 +39,14 @@ namespace SnowyBot.Handlers
       client.InteractionCreated += Client_InteractionCreated;
       client.ReactionAdded += Client_ReactionAdded;
       client.ReactionRemoved += Client_ReactionRemoved;
+      client.MessageUpdated += Client_MessageUpdated;
     }
 
     private async Task Client_MessageRecieved(SocketMessage arg)
     {
       var socketMessage = arg as SocketUserMessage;
 
-      if (!(arg is SocketUserMessage message) || message.Author.IsBot || message.Author.IsWebhook || message.Channel is IPrivateChannel)
+      if (arg is not SocketUserMessage message || message.Author.IsBot || message.Author.IsWebhook || message.Channel is IPrivateChannel)
         return;
 
       var context = new SocketCommandContext(client, socketMessage);
@@ -88,11 +90,11 @@ namespace SnowyBot.Handlers
 
       IResult result = await commands.ExecuteAsync(context, argPos, provider, MultiMatchHandling.Best).ConfigureAwait(false);
       if (result.Error == CommandError.UnknownCommand)
-      {
         await arg.Channel.SendMessageAsync("Unknown command. You may correct your post.").ConfigureAwait(false);
-      }
+      else if (result.Error == CommandError.UnmetPrecondition)
+        await arg.Channel.SendMessageAsync("You lack the permissions to use this command.").ConfigureAwait(false);
     }
-    public async Task Client_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
+    private async Task Client_MessageUpdated(Cacheable<IMessage, ulong> arg1, SocketMessage arg2, ISocketMessageChannel arg3)
     {
       if (DateTime.Now - arg2.Timestamp >= TimeSpan.FromMinutes(1))
         return;
@@ -122,9 +124,29 @@ namespace SnowyBot.Handlers
     }
     private async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
     {
+      string roleID = await guilds.ExistsReactiveRole((arg3.Channel as SocketGuildChannel).Guild.Id, arg3.MessageId, arg3.Emote.Name).ConfigureAwait(false);
+      if (roleID == null)
+        return;
+      SocketGuildUser user = arg3.User.GetValueOrDefault() as SocketGuildUser;
+      if (user.IsBot)
+        return;
+      if (user.Roles.Contains(user.Guild.GetRole(ulong.Parse(roleID))))
+        return;
+      SocketRole role = user.Guild.GetRole(ulong.Parse(roleID));
+      await user.AddRoleAsync(role).ConfigureAwait(false);
     }
     private async Task Client_ReactionRemoved(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
     {
+      string roleID = await guilds.ExistsReactiveRole((arg3.Channel as SocketGuildChannel).Guild.Id, arg3.MessageId, arg3.Emote.Name).ConfigureAwait(false);
+      if (roleID == null)
+        return;
+      SocketGuildUser user = arg3.User.GetValueOrDefault() as SocketGuildUser;
+      if (user.IsBot)
+        return;
+      if (!user.Roles.Contains(user.Guild.GetRole(ulong.Parse(roleID))))
+        return;
+      SocketRole role = user.Guild.GetRole(ulong.Parse(roleID));
+      await user.RemoveRoleAsync(role).ConfigureAwait(false);
     }
     private async Task HandleSlash(SocketSlashCommand command)
     {
@@ -132,10 +154,7 @@ namespace SnowyBot.Handlers
     }
     private async Task HandleComponent(SocketMessageComponent component)
     {
-      // This needs updating.
-      // data[0] = User ID
-      // data[1] = Character ID
-      // data[2] = Channel ID
+
       string[] data = component.Data.CustomId.Split(":");
       if (component.User.Id != ulong.Parse(data[1]))
         return;
@@ -347,10 +366,17 @@ namespace SnowyBot.Handlers
           HandleCharacterEdits(component, CharacterDataType.ReferenceURL, data).ContinueWith(t => Console.WriteLine(t.Exception), TaskContinuationOptions.OnlyOnFaulted).ConfigureAwait(false);
 
           break;
+        case string s when s.Contains("ReactiveRoles"):
+          HandleReactiveRoles(component, data).ConfigureAwait(false);
+          break;
       }
     }
     private async Task HandleCharacterEdits(SocketMessageComponent component, CharacterDataType type, string[] data)
     {
+      // This needs updating.
+      // data[0] = User ID
+      // data[1] = Character ID
+      // data[2] = Channel ID
       switch (type)
       {
         case CharacterDataType.Prefix:
@@ -1038,6 +1064,107 @@ namespace SnowyBot.Handlers
             await Task.Delay(5000).ConfigureAwait(false);
             await timeoutMessage12.DeleteAsync().ConfigureAwait(false);
           }
+          break;
+      }
+    }
+    private async Task HandleReactiveRoles(SocketMessageComponent component, string[] data)
+    {
+      // data[2] = Guild ID
+      // data[3] = Channel ID
+      // data[4] = Message ID
+      // data[1] = User ID
+      ulong guildID = ulong.Parse(data[2]);
+      ulong channelID = ulong.Parse(data[3]);
+      ulong messageID = ulong.Parse(data[4]);
+      ulong userID = ulong.Parse(data[1]);
+
+      IGuild iGuild = DiscordService.client.GetGuild(guildID);
+      Guild guild = await guilds.GetGuild(guildID).ConfigureAwait(false);
+      SocketTextChannel channel = await iGuild.GetChannelAsync(channelID).ConfigureAwait(false) as SocketTextChannel;
+      IUserMessage message = await channel.GetMessageAsync(messageID).ConfigureAwait(false) as IUserMessage;
+
+      ulong role = 0;
+      RestUserMessage m1 = await component.Channel.SendMessageAsync($"Send the role to {(data[0] == "ReactiveRolesAdd" ? "link to" : "unlink from")} the message.").ConfigureAwait(false);
+      var r1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == userID) && (x.Channel.Id == component.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      if (r1.IsSuccess)
+      {
+        if (!TryParseRole(r1.Value.Content, out ulong roleID))
+        {
+          RestUserMessage m2 = await component.Channel.SendMessageAsync("Please enter a valid role mention.").ConfigureAwait(false);
+          await m1.DeleteAsync().ConfigureAwait(false);
+          await Task.Delay(5000).ConfigureAwait(false);
+          await m2.DeleteAsync().ConfigureAwait(false);
+          return;
+        }
+        role = roleID;
+      }
+      else
+      {
+        RestUserMessage m3 = await component.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+        await m1.DeleteAsync().ConfigureAwait(false);
+        await Task.Delay(5000).ConfigureAwait(false);
+        await m3.DeleteAsync().ConfigureAwait(false);
+        return;
+      }
+
+      await m1.DeleteAsync().ConfigureAwait(false);
+      await r1.Value.DeleteAsync().ConfigureAwait(false);
+
+      bool flag1;
+      bool flag2;
+
+      Emoji emojiResult;
+      Emote emoteResult;
+
+      string emoji = "";
+      RestUserMessage m4 = await component.Channel.SendMessageAsync($"Send the emoji linked to that role. (Do not use emojis from a server that I'm not in.)").ConfigureAwait(false);
+      var e1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == component.User.Id) && (x.Channel.Id == component.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      if (e1.IsSuccess)
+      {
+        flag1 = Emoji.TryParse(e1.Value.Content.ToString(), out Emoji emojiID1);
+        flag2 = Emote.TryParse(e1.Value.Content, out Emote emoteID1);
+        emojiResult = emojiID1;
+        emoteResult = emoteID1;
+        if (!flag1 && !flag2)
+        {
+          RestUserMessage m5 = await component.Channel.SendMessageAsync("Please enter a valid emoji.").ConfigureAwait(false);
+          await m4.DeleteAsync().ConfigureAwait(false);
+          await Task.Delay(5000).ConfigureAwait(false);
+          await m5.DeleteAsync().ConfigureAwait(false);
+          return;
+        }
+        if (flag1)
+          emoji = emojiID1.Name;
+        if (flag2)
+          emoji = emoteID1.ToString();
+      }
+      else
+      {
+        RestUserMessage m6 = await component.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+        await m4.DeleteAsync().ConfigureAwait(false);
+        await Task.Delay(5000).ConfigureAwait(false);
+        await m6.DeleteAsync().ConfigureAwait(false);
+        return;
+      }
+
+      await m4.DeleteAsync().ConfigureAwait(false);
+      await e1.Value.DeleteAsync().ConfigureAwait(false);
+
+      switch (data[0])
+      {
+        case string s when s == "ReactiveRolesAdd":
+          RestUserMessage m7 = await component.Message.Channel.SendMessageAsync($"Emoji: {emoji}\nLinked to:{iGuild.GetRole(role).Mention}\nFor message: {message.GetJumpUrl()}").ConfigureAwait(false);
+          await message.AddReactionAsync(flag1 ? emojiResult : emoteResult).ConfigureAwait(false);
+          await guilds.AddReactiveRole(guildID, channelID, messageID, role, emoji).ConfigureAwait(false);
+          await Task.Delay(5000).ConfigureAwait(false);
+          await m7.DeleteAsync().ConfigureAwait(false);
+          break;
+        case string s when s == "ReactiveRolesRemove":
+          RestUserMessage m8 = await component.Message.Channel.SendMessageAsync($"Emoji: {emoji}\nUnlinked from:{iGuild.GetRole(role).Mention}\nFor message: {message.GetJumpUrl()}").ConfigureAwait(false);
+          await message.RemoveReactionAsync(flag1 ? emojiResult : emoteResult, DiscordService.client.CurrentUser).ConfigureAwait(false);
+          await guilds.RemoveReactiveRole(guildID, channelID, messageID, role, emoji).ConfigureAwait(false);
+          await Task.Delay(5000).ConfigureAwait(false);
+          await m8.DeleteAsync().ConfigureAwait(false);
           break;
       }
     }

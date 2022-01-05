@@ -54,51 +54,52 @@ namespace SnowyBot.Database
 
       await context.SaveChangesAsync().ConfigureAwait(false);
     }
-    public async Task AddReactiveMessage(ulong guildID, ulong channelID, ulong messageID)
-    {
-      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
-      if (guild == null)
-        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"{channelID},{messageID};|" });
-      if (guild.Roles.Contains($"{channelID},{messageID}"))
-        return;
-      guild.Roles += $"{channelID},{messageID};|";
-    }
-    public async Task<bool> ExistsReactiveMessage(ulong guildID, ulong channelID, ulong messageID)
+    public async Task AddReactiveRole(ulong guildID, ulong channelID, ulong messageID, ulong roleID, string emote)
     {
       var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
       if (guild == null)
       {
-        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = "" });
-        return false;
-      }
-      return guild.Roles.Contains($"{channelID},{messageID}");
-    }
-    public async Task RemoveReactiveMessage(ulong guildID, ulong channelID, ulong messageID)
-    {
-      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
-      if (guild == null)
-        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"" });
-      if (!guild.Roles.Contains($"{channelID},{messageID}"))
+        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"{channelID};{messageID};{roleID};{emote}" });
         return;
-      int index1 = guild.Roles.IndexOf($"{channelID},{messageID}");
-      int index2 = guild.Roles.IndexOf("|", index1);
-      guild.Roles = guild.Roles.Remove(index1, index2 - index1);
+      }
+      if (guild.Roles == string.Empty || guild.Roles == null)
+        guild.Roles = $"{channelID};{messageID};{roleID};{emote}";
+      else
+        guild.Roles += $"|{channelID};{messageID};{roleID};{emote}";
       await context.SaveChangesAsync().ConfigureAwait(false);
     }
-    public async Task AddReactiveRole(ulong guildID, ulong channelID, ulong messageID, ulong roleID, ulong emoteID)
+    public async Task RemoveReactiveRole(ulong guildID, ulong channelID, ulong messageID, ulong roleID, string emote)
     {
       var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
       if (guild == null)
-        context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"{channelID},{messageID};{roleID},{emoteID}|" });
-      if (!guild.Roles.Contains($"{channelID},{messageID}"))
+        context.Add(new Guild { ID = guildID, Prefix = "!"});
+      if (!guild.Roles.Contains($"{channelID};{messageID};{roleID};{emote}"))
         return;
-      int index1 = guild.Roles.IndexOf($"{channelID},{messageID}");
-      int index2 = guild.Roles.IndexOf("|", index1);
-      int index3 = guild.Roles.IndexOf($"{roleID},{emoteID}", index1);
-      if (index3 == -1 || index3 > index2)
-        guild.Roles = guild.Roles.Insert(index2 - 1, $"{roleID},{emoteID}");
-
-
+      int index = guild.Roles.IndexOf($"{channelID};{messageID};{roleID};{emote}");
+      if (index == 0)
+        guild.Roles = guild.Roles.Replace($"{channelID};{messageID};{roleID};{emote}", "");
+      else
+        guild.Roles = guild.Roles.Replace($"|{channelID};{messageID};{roleID};{emote}", "");
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task<string> ExistsReactiveRole(ulong guildID, ulong messageID, string emote)
+    {
+      var guild = await context.Guilds.FindAsync(guildID).ConfigureAwait(false);
+      if (guild == null)
+      {
+        context.Add(new Guild { ID = guildID, Prefix = "!" });
+        return null;
+      }
+      string[] split = guild.Roles.Split('|');
+      foreach(string s in split)
+      {
+        if (s.Contains(messageID.ToString()) && s.Contains(emote))
+        {
+          string[] split2 = s.Split(";");
+          return split2[2];
+        }
+      }
+      return null;
     }
     public async Task DeleteMusic(ulong id, ICommandContext commandContext)
     {

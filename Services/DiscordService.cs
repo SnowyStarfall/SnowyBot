@@ -43,6 +43,7 @@ namespace SnowyBot.Services
     public static readonly PlaylistService playlists;
     public static readonly InteractionService interaction;
 
+    public static readonly DevModule devModule;
     public static readonly FunModule funModule;
     public static readonly LavalinkModule audioModule;
     public static readonly CharacterModule characterModule;
@@ -75,6 +76,7 @@ namespace SnowyBot.Services
       commands = provider.GetRequiredService<CommandService>();
       playlists = provider.GetRequiredService<PlaylistService>();
 
+      devModule = provider.GetRequiredService<DevModule>();
       funModule = provider.GetRequiredService<FunModule>();
       audioModule = provider.GetRequiredService<LavalinkModule>();
       characterModule = provider.GetRequiredService<CharacterModule>();
@@ -89,7 +91,6 @@ namespace SnowyBot.Services
       client.Log += Log;
       client.UserJoined += Client_UserJoined;
       client.UserLeft += Client_UserLeft;
-      client.MessageUpdated += commandHandler.Client_MessageUpdated;
 
       statusTimer = new Timer(30000);
       statusTimer.Elapsed += audioModule.StatusTumer_Elapsed;
@@ -163,6 +164,7 @@ namespace SnowyBot.Services
         .AddSingleton<CommandHandler>()
         .AddSingleton<EmbedHandler>()
         .AddSingleton<FunModule>()
+        .AddSingleton<DevModule>()
         .AddSingleton<LavalinkModule>()
         .AddSingleton<CharacterModule>()
         .AddSingleton<RoleModule>()

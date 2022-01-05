@@ -878,7 +878,7 @@ namespace SnowyBot.Modules
     public async Task Loop()
     {
       Guild guild = await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false);
-      if (!DiscordService.tempGuildData.TryGetValue(lavaNode.GetPlayer(Context.Guild), out bool l))
+      if (!DiscordService.tempGuildData.TryGetValue(lavaNode.GetPlayer(Context.Guild), out _))
       {
         DiscordService.tempGuildData.GetOrAdd(lavaNode.GetPlayer(Context.Guild), true);
         IUserMessage m1 = await Context.Channel.SendMessageAsync($"Loop enabled! :repeat:").ConfigureAwait(false);

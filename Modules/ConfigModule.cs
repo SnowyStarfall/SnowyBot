@@ -109,7 +109,7 @@ namespace SnowyBot.Modules
       }
 
       IMessageChannel channel = null;
-      await Context.Channel.SendMessageAsync("Mention the channel you would like the welcome to appear in.").ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync("Mention the channel you would like the goodbye to appear in.").ConfigureAwait(false);
 
       var result1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
@@ -131,10 +131,10 @@ namespace SnowyBot.Modules
       await Context.Channel.SendMessageAsync($"Goodbye message set to\n>>> {message}").ConfigureAwait(false);
       await guilds.CreateGoodbyeMessage(Context.Guild.Id, channel.Id, message).ConfigureAwait(false);
     }
-    [Command("Roles")]
-    public async Task Roles()
-    {
-      await ReplyAsync("Not yet implemented.").ConfigureAwait(false);
-    }
+    //[Command("Roles")]
+    //public async Task Roles()
+    //{
+    //  await ReplyAsync("Not yet implemented.").ConfigureAwait(false);
+    //}
   }
 }

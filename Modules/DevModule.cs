@@ -17,5 +17,6 @@ namespace SnowyBot.Modules
     {
       List<PlaylistVideo> videos = await DiscordService.playlists.GetPlaylistResults(query).ConfigureAwait(false);
     }
+
   }
 }
