@@ -19,7 +19,7 @@ namespace SnowyBot.Database
     // Command prefix for the Guild
     public string Prefix { get; set; }
     // Reactive Roles string for the Guild
-    // channel,message;role,emoji:role,emoji|channel,message;role,emoji:role,emoji| 
+    // channel;message;role;emoji|
     public string Roles { get; set; }
     // If the bot should delete music posts after posting them
     public bool DeleteMusic { get; set; }
@@ -27,5 +27,11 @@ namespace SnowyBot.Database
     public string WelcomeMessage { get; set; }
     // If the bot should say goodbye to members. Empty means no.
     public string GoodbyeMessage { get; set; }
+    // Stores XP data
+    // userID;XP|
+    public string UserPoints { get ; set; }
+    // Stores the integer range of which XP is gained
+    // minimum;maximum
+    public string PointGain { get; set; }
   }
 }

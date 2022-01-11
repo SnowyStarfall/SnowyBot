@@ -12,7 +12,7 @@ namespace SnowyBot.Modules
 {
   public class CharacterModule : ModuleBase
   {
-    public Random random = new Random();
+    public Random random = new();
     public readonly Characters characters;
     public CharacterModule(Characters _characters) => characters = _characters;
 
@@ -227,7 +227,7 @@ namespace SnowyBot.Modules
         return;
       }
 
-      EmbedBuilder builder = new EmbedBuilder();
+      EmbedBuilder builder = new();
       builder.WithAuthor($"{Context.User.Username}#{Context.User.Discriminator}", Context.User.GetAvatarUrl());
       if (character.AvatarURL != "")
         builder.WithThumbnailUrl(character.AvatarURL);
@@ -246,11 +246,11 @@ namespace SnowyBot.Modules
         builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Gif) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+      builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
       string[] id = character.CharacterID.Split(":");
 
-      ComponentBuilder cBuilder = new ComponentBuilder();
+      ComponentBuilder cBuilder = new();
       cBuilder.WithButton("Edit", $"EditCharacter:{Context.User.Id}:{id[1]}:{Context.Channel.Id}", ButtonStyle.Primary);
       cBuilder.WithButton("Delete", $"DeleteCharacter:{Context.User.Id}:{id[1]}:{Context.Channel.Id}", ButtonStyle.Danger);
 
@@ -288,7 +288,7 @@ namespace SnowyBot.Modules
         builder.WithImageUrl(character.ReferenceURL);
       builder.WithCurrentTimestamp();
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithFooter("Made by SnowyStarfall (Snowy#0364)", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl());
+      builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
       await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 

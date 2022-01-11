@@ -26,12 +26,6 @@ namespace SnowyBot.Services
       guilds = _guilds;
     }
 
-    public async Task StartAsync()
-    {
-      await client.LoginAsync(TokenType.Bot, DiscordService.config.DiscordToken).ConfigureAwait(false);
-      await client.StartAsync().ConfigureAwait(false);
 
-      await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider).ConfigureAwait(false);
-    }
   }
 }

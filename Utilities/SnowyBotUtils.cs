@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SnowyBot
 {
-  public static class SnowyBotUtils
+  public static partial class SnowyBotUtils
   {
     public static bool ValidCommand(string command)
     {

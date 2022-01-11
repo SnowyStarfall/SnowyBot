@@ -18,7 +18,7 @@ namespace SnowyBot.Modules
 
     [Command("Question")]
     [Alias(new string[] { "Q" })]
-    public async Task QuestionAsync([Remainder] string question = null)
+    public async Task Question([Remainder] string question = null)
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
       int choice = random.Next(0, 101);
@@ -127,58 +127,57 @@ namespace SnowyBot.Modules
     [Alias(new string[] { "rate", "waifu" })]
     public async Task RateWaifu([Remainder] string mention = null)
     {
-      if (mention == null)
+
+      if (Context.Message.MentionedUserIds.Count > 0)
       {
+        IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
+
         int value = 0;
 
-        foreach (var s in Context.User.Username)
+        foreach (var s in user.Username)
           value += s;
 
-        int result = value * Context.User.Username.Length;
+        int result = value * user.Username.Length;
 
         int rating = result % 11;
 
-        await Context.Channel.SendMessageAsync($"I give you a {rating}/10").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync($"I give {user.Mention} a {rating}/10").ConfigureAwait(false);
+        return;
       }
       else
       {
-        if (Context.Message.MentionedUserIds.Count > 0)
+        if (mention == null)
         {
-          IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
+          int value1 = 0;
 
-          int value = 0;
+          foreach (var s in Context.User.Username)
+            value1 += s;
 
-          foreach (var s in user.Username)
-            value += s;
+          int result1 = value1 * Context.User.Username.Length;
 
-          int result = value * user.Username.Length;
+          int rating1 = result1 % 11;
 
-          int rating = result % 11;
-
-          await Context.Channel.SendMessageAsync($"I give {user.Mention} a {rating}/10").ConfigureAwait(false);
+          await Context.Channel.SendMessageAsync($"I give you a {rating1}/10").ConfigureAwait(false);
+          return;
         }
-        else
-        {
-          IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
+        int value2 = 0;
 
-          int value = 0;
+        foreach (var s in mention)
+          value2 += s;
 
-          foreach (var s in user.Username)
-            value += s;
+        int result2 = value2 * mention.Length;
 
-          int result = value * user.Username.Length;
+        int rating2 = result2 % 11;
 
-          int rating = result % 11;
-
-          await Context.Channel.SendMessageAsync($"I give {user.Mention} a {rating}/10").ConfigureAwait(false);
-        }
+        await Context.Channel.SendMessageAsync($"I give {mention} a {rating2}/10").ConfigureAwait(false);
+        return;
       }
     }
     [Command("jumbo")]
     public async Task Jumbo([Remainder] string emoji)
     {
       bool valid = Emote.TryParse(emoji, out var emote);
-      if(!valid)
+      if (!valid)
         return;
       await Context.Channel.SendMessageAsync(emote.Url).ConfigureAwait(false);
     }
@@ -188,12 +187,12 @@ namespace SnowyBot.Modules
       int amount = random.Next(0, 101);
       string awoo = $"{(random.Next(0, 2) == 0 ? "a" : "A")}{(random.Next(0, 2) == 0 ? "w" : "W")}";
 
-      for(int i = 0; i < amount; i++)
+      for (int i = 0; i < amount; i++)
         awoo += random.Next(0, 2) == 0 ? "o" : "O";
 
       awoo += "!";
 
       await Context.Channel.SendMessageAsync(awoo).ConfigureAwait(false);
-    }  
+    }
   }
 }

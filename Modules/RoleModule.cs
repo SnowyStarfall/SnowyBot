@@ -242,13 +242,12 @@ namespace SnowyBot.Modules
           ComponentBuilder componentBuilder = new();
           componentBuilder.WithButton("Add Role", $"ReactiveRolesAdd:{Context.User.Id}:{channel.Guild.Id}:{channel.Id}:{message.Id}", ButtonStyle.Primary);
           componentBuilder.WithButton("Remove Role", $"ReactiveRolesRemove:{Context.User.Id}:{channel.Guild.Id}:{channel.Id}:{message.Id}", ButtonStyle.Primary);
-          componentBuilder.WithButton("Back", $"ReactiveRolesBack:{Context.User.Id}:{channel.Guild.Id}:{channel.Id}:{message.Id}", ButtonStyle.Danger);
 
           await embed.ModifyAsync((MessageProperties properties) =>
           {
             properties.Embed = builder.Build();
+            properties.Components = componentBuilder.Build();
           });
-          await Context.Channel.SendMessageAsync(null, false, builder.Build(), null, null, null, componentBuilder.Build()).ConfigureAwait(false);
           break;
       }
     }
@@ -379,14 +378,6 @@ namespace SnowyBot.Modules
         await Context.Channel.SendMessageAsync("Timed Out").ConfigureAwait(false);
         return;
       }
-    }
-    [Command("react")]
-    public async Task React([Remainder] string query = null)
-    {
-      Emote emote = Emote.Parse("<:crystalSad:928205182855176232>");
-      SocketUserMessage message = Context.Message as SocketUserMessage;
-      await message.AddReactionAsync(emote).ConfigureAwait(false);
-      int a;
     }
   }
 }

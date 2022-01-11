@@ -25,7 +25,7 @@ namespace SnowyBot.Handlers
     private static CommandService commands;
     private static Guilds guilds;
     private static Characters characters;
-    private static Random random = new();
+    private static readonly Random random = new();
     public int playerCount;
     public CommandHandler(DiscordSocketClient _client, CommandService _commands, IServiceProvider _provider, Guilds _guilds, Characters _characters)
     {
@@ -44,23 +44,23 @@ namespace SnowyBot.Handlers
 
     private async Task Client_MessageRecieved(SocketMessage arg)
     {
-      var socketMessage = arg as SocketUserMessage;
+      SocketUserMessage socketMessage = arg as SocketUserMessage;
+      SocketCommandContext context = new(client, socketMessage);
 
       if (arg is not SocketUserMessage message || message.Author.IsBot || message.Author.IsWebhook || message.Channel is IPrivateChannel)
         return;
 
-      var context = new SocketCommandContext(client, socketMessage);
-      string prefix = null;
       string[] array = context.Message.Content.Split(" ");
+      string prefix = "";
       try
       {
         prefix = await guilds.GetGuildPrefix(context.Guild.Id).ConfigureAwait(false) ?? "!";
       }
       catch (Exception ex)
       {
-        Console.WriteLine(ex);
+        Console.Write(ex.ToString());
       }
-      var argPos = 0;
+      int argPos = 0;
 
       Character character = await characters.HasCharPrefix(context.User.Id, context.Message.Content).ConfigureAwait(false);
 
@@ -85,7 +85,51 @@ namespace SnowyBot.Handlers
         return;
       }
 
-      if (!message.HasStringPrefix(prefix, ref argPos) && !message.HasMentionPrefix(DiscordService.client.CurrentUser, ref argPos))
+      Guild guild = await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false);
+      (int min, int max) = await guilds.GetGuildPointRange(context.Guild.Id).ConfigureAwait(false);
+      ulong amount = (ulong)random.Next(min, max + 1);
+
+      if (context.Guild != null)
+      {
+        if (DiscordService.tempPointsCooldownData.ContainsKey(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false)))
+        {
+          DiscordService.tempPointsCooldownData.TryGetValue(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false), out List<(ulong userID, int messages, int timer)> values);
+          (ulong userID, int messages, int timer) tempValue = (0, 0, 0);
+          (ulong userID, int messages, int timer) resultValue = (0, 0, 0);
+
+          foreach (var item in values)
+            if (item.userID == context.User.Id)
+            {
+              tempValue = item;
+              resultValue = tempValue;
+            }
+          if (resultValue.userID != 0)
+          {
+            if (resultValue.messages != 5)
+              await guilds.UpdateGuildPoints(context.Guild.Id, context.User.Id, amount).ConfigureAwait(false);
+            if (resultValue.messages < 5)
+            {
+              resultValue.messages++;
+              int index = values.IndexOf(tempValue);
+              values[index] = resultValue;
+            }
+          }
+          else
+          {
+            await guilds.UpdateGuildPoints(context.Guild.Id, context.User.Id, amount).ConfigureAwait(false);
+            values.Add((context.User.Id, 1, 5));
+          }
+        }
+        else
+        {
+          List<(ulong userID, int messages, int timer)> values = new();
+          await guilds.UpdateGuildPoints(context.Guild.Id, context.User.Id, amount).ConfigureAwait(false);
+          values.Add((context.User.Id, 1, 5));
+          DiscordService.tempPointsCooldownData.TryAdd(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false), values);
+        }
+      }
+
+      if (!message.HasStringPrefix(prefix, ref argPos) && !message.HasMentionPrefix(client.CurrentUser, ref argPos))
         return;
 
       IResult result = await commands.ExecuteAsync(context, argPos, provider, MultiMatchHandling.Best).ConfigureAwait(false);
@@ -196,7 +240,7 @@ namespace SnowyBot.Handlers
         case "DeleteCharacter":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Edit", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Delete", $"DeleteCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -205,7 +249,7 @@ namespace SnowyBot.Handlers
         case "EditCharacter":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Prefix", $"EditCharacterPrefix:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary);
             builder.WithButton("Name", $"EditCharacterName:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary);
             builder.WithButton("Gender", $"EditCharacterGender:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary);
@@ -225,7 +269,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterPrefix":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Prefix", $"EditCharacterPrefix:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Success, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -237,7 +281,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterName":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Name", $"EditCharacterName:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Success, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -249,7 +293,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterGender":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Gender", $"EditCharacterGender:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Success, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -261,7 +305,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterSex":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Sex", $"EditCharacterSex:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -273,7 +317,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterSpecies":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Species", $"EditCharacterSpecies:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -285,7 +329,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterAge":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Age", $"EditCharacterAge:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -297,7 +341,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterHeight":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Height", $"EditCharacterHeight:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -309,7 +353,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterWeight":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Weight", $"EditCharacterWeight:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -321,7 +365,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterOrientation":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Orientation", $"EditCharacterOrientation:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -333,7 +377,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterDescription":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Description", $"EditCharacterDescription:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -345,7 +389,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterAvatar":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Avatar", $"EditCharacterAvatar:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -357,7 +401,7 @@ namespace SnowyBot.Handlers
         case "EditCharacterReference":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Reference", $"EditCharacterReference:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Secondary, null, null, true);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
@@ -418,9 +462,9 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
               properties.Embeds = new Embed[1] { eBuilder.Build() };
               properties.Components = builder.Build();
@@ -476,9 +520,9 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
               properties.Embeds = new Embed[1] { eBuilder.Build() };
               properties.Components = builder.Build();
@@ -534,7 +578,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -592,7 +636,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -650,7 +694,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -708,7 +752,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -766,7 +810,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -824,7 +868,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -882,7 +926,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -940,7 +984,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -993,7 +1037,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -1046,7 +1090,7 @@ namespace SnowyBot.Handlers
               eBuilder.WithImageUrl(character.ReferenceURL);
             eBuilder.WithCurrentTimestamp();
             eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter("Made by SnowyStarfall (Snowy#0364)", component.User.GetAvatarUrl(ImageFormat.Gif));
+            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
 
             await component.Message.ModifyAsync(async (MessageProperties properties) =>
             {
@@ -1069,14 +1113,14 @@ namespace SnowyBot.Handlers
     }
     private async Task HandleReactiveRoles(SocketMessageComponent component, string[] data)
     {
+      // data[1] = User ID
       // data[2] = Guild ID
       // data[3] = Channel ID
       // data[4] = Message ID
-      // data[1] = User ID
+      ulong userID = ulong.Parse(data[1]);
       ulong guildID = ulong.Parse(data[2]);
       ulong channelID = ulong.Parse(data[3]);
       ulong messageID = ulong.Parse(data[4]);
-      ulong userID = ulong.Parse(data[1]);
 
       IGuild iGuild = DiscordService.client.GetGuild(guildID);
       Guild guild = await guilds.GetGuild(guildID).ConfigureAwait(false);
