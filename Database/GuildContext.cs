@@ -33,5 +33,7 @@ namespace SnowyBot.Database
     // Stores the integer range of which XP is gained
     // minimum;maximum
     public string PointGain { get; set; }
+    // Stores the channel ID for the update channel, if empty, will not post.
+    public ulong ChangelogID { get; set; }
   }
 }

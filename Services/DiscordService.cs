@@ -47,8 +47,8 @@ namespace SnowyBot.Services
     public static readonly RoleModule roleModule;
     public static readonly PointsModule pointsModule;
 
-    public static ConcurrentDictionary<LavaPlayer, (IGuild guild, bool loop, int timer)> tempLavaData;
-    public static ConcurrentDictionary<SocketMessage, int> tempMessageData;
+    public static ConcurrentDictionary<LavaPlayer, (IGuild guild, int loop, int timer, LavaTrack trackToLoop)> tempLavaData;
+    public static ConcurrentDictionary<ulong, (IUserMessage message, int timer, bool webHook, ulong author)> tempMessageData;
     public static ConcurrentDictionary<Guild, List<(ulong userID, int messages, int timer)>> tempPointsCooldownData;
     public static ConcurrentDictionary<IGuild, int> voiceChannelData;
 
@@ -235,8 +235,8 @@ namespace SnowyBot.Services
         {
           if (tempMessageData.Count <= i)
             break;
-          tempMessageData.TryUpdate(tempMessageData.ElementAt(i).Key, tempMessageData.ElementAt(i).Value - 1, tempMessageData.ElementAt(i).Value);
-          if (tempMessageData.ElementAt(i).Value <= 0)
+          tempMessageData.TryUpdate(tempMessageData.ElementAt(i).Key, (tempMessageData.ElementAt(i).Value.message, tempMessageData.ElementAt(i).Value.timer - 1, tempMessageData.ElementAt(i).Value.webHook, tempMessageData.ElementAt(i).Value.author), tempMessageData.ElementAt(i).Value);
+          if (tempMessageData.ElementAt(i).Value.timer <= 0)
             tempMessageData.TryRemove(tempMessageData.ElementAt(i));
         }
       }
@@ -283,13 +283,17 @@ namespace SnowyBot.Services
           }
           bool active = tempLavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.None && tempLavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.Stopped && tempLavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.Paused;
           var users = (new List<IGuildUser>((await tempLavaData.ElementAt(i).Key.VoiceChannel.GetUsersAsync().ToListAsync().ConfigureAwait(false)).FirstOrDefault())).Where(x => x.VoiceChannel != null && tempLavaData.ElementAt(i).Key.VoiceChannel != null && x.VoiceChannel == tempLavaData.ElementAt(i).Key.VoiceChannel && !x.IsBot);
-
+          if (users == null)
+          {
+            tempLavaData.TryRemove(tempLavaData.ElementAt(i).Key, out _);
+            continue;
+          }
           //if (tempUsers != null)
           //  users = users.Where(x => x.VoiceChannel != null && tempLavaData.ElementAt(i).Key.VoiceChannel != null && x.VoiceChannel == tempLavaData.ElementAt(i).Key.VoiceChannel).ToList();
 
           if (!users.Any() || !active)
           {
-            tempLavaData.TryUpdate(tempLavaData.ElementAt(i).Key, (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer - 1), (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer));
+            tempLavaData.TryUpdate(tempLavaData.ElementAt(i).Key, (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer - 1, tempLavaData.ElementAt(i).Value.trackToLoop), (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer, tempLavaData.ElementAt(i).Value.trackToLoop));
             if (tempLavaData.ElementAt(i).Value.timer <= 0)
             {
               await tempLavaData.ElementAt(i).Key.TextChannel.SendMessageAsync("I have been inactive for more than five minutes. Disconnecting.").ConfigureAwait(false);
@@ -301,7 +305,7 @@ namespace SnowyBot.Services
           }
           else
           {
-            tempLavaData.TryUpdate(tempLavaData.ElementAt(i).Key, (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, 300), (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer));
+            tempLavaData.TryUpdate(tempLavaData.ElementAt(i).Key, (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, 300, tempLavaData.ElementAt(i).Value.trackToLoop), (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer, tempLavaData.ElementAt(i).Value.trackToLoop));
           }
         }
       }

@@ -69,19 +69,30 @@ namespace SnowyBot.Handlers
         try { await context.Message.DeleteAsync().ConfigureAwait(false); }
         catch (Exception) { }
 
-        var webhooks = await context.Guild.GetWebhooksAsync().ConfigureAwait(false);
-        string url = null;
-        foreach (RestWebhook webhook in webhooks)
+        try
         {
-          if (string.Equals(webhook.Name, "snowybot", StringComparison.OrdinalIgnoreCase) && webhook.ChannelId == context.Channel.Id)
+          var webhooks = await context.Guild.GetWebhooksAsync().ConfigureAwait(false);
+          string url = null;
+          foreach (RestWebhook webhook in webhooks)
           {
-            url = $"https://ptb.discord.com/api/webhooks/{webhook.Id}/{webhook.Token}";
-            break;
+            if (string.Equals(webhook.Name, "snowybot", StringComparison.OrdinalIgnoreCase) && webhook.ChannelId == context.Channel.Id)
+            {
+              url = $"https://ptb.discord.com/api/webhooks/{webhook.Id}/{webhook.Token}";
+              break;
+            }
           }
+          if (url == null) return;
+          DiscordWebhookClient webClient = new(url);
+          ulong messageID = await webClient.SendMessageAsync(context.Message.Content.Remove(0, array[0].Length + 1), false, null, character.Name, character.AvatarURL).ConfigureAwait(false);
+          IUserMessage message1 = await context.Channel.GetMessageAsync(messageID).ConfigureAwait(false) as IUserMessage;
+          DiscordService.tempMessageData.TryAdd(messageID, (message1, 600, true, context.User.Id));
         }
-        if (url == null) return;
-        DiscordWebhookClient webClient = new DiscordWebhookClient(url);
-        await webClient.SendMessageAsync(context.Message.Content.Remove(0, array[0].Length + 1), false, null, character.Name, character.AvatarURL).ConfigureAwait(false);
+        catch (Exception ex)
+        {
+          Console.Write(ex);
+          if (ex.ToString().Contains("Missing Permissions"))
+            await context.Channel.SendMessageAsync("I lack the permissions to grab WebHooks. Please enable Manage Webhooks for my role.").ConfigureAwait(false);
+        }
         return;
       }
 
@@ -142,13 +153,13 @@ namespace SnowyBot.Handlers
     {
       if (DateTime.Now - arg2.Timestamp >= TimeSpan.FromMinutes(1))
         return;
-      DiscordService.tempMessageData.TryAdd(arg2, 60);
-      if (DiscordService.tempMessageData.ContainsKey(arg2))
+      if (DiscordService.tempMessageData.ContainsKey(arg2.Id))
       {
         await Client_MessageRecieved(arg2).ConfigureAwait(false);
-        DiscordService.tempMessageData.Remove(arg2, out int v);
+        DiscordService.tempMessageData.Remove(arg2.Id, out _);
         return;
       }
+      DiscordService.tempMessageData.TryAdd(arg2.Id, (arg2 as IUserMessage, 60, false, arg2.Author.Id));
     }
     private async Task Client_InteractionCreated(SocketInteraction interaction)
     {
@@ -168,6 +179,21 @@ namespace SnowyBot.Handlers
     }
     private async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> arg1, Cacheable<IMessageChannel, ulong> arg2, SocketReaction arg3)
     {
+      try
+      {
+        if (DiscordService.tempMessageData.ContainsKey(arg1.Id))
+        {
+          DiscordService.tempMessageData.TryGetValue(arg1.Id, out (IUserMessage message, int timer, bool webHook, ulong author) value);
+          if (value.webHook && value.author == arg3.UserId && arg3.Emote.Name == "❌")
+          {
+            try { await value.message.DeleteAsync().ConfigureAwait(false); }
+            catch (Exception ex) { Console.Write(ex); }
+            DiscordService.tempMessageData.TryRemove(arg1.Id, out _);
+          }
+        }
+      }
+      catch (Exception ex)
+      { Console.Write(ex); }
       string roleID = await guilds.ExistsReactiveRole((arg3.Channel as SocketGuildChannel).Guild.Id, arg3.MessageId, arg3.Emote.Name).ConfigureAwait(false);
       if (roleID == null)
         return;

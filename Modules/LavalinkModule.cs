@@ -18,6 +18,7 @@ using System.Net.Http;
 using System.Timers;
 using SnowyBot.Database;
 using static SnowyBot.SnowyBotUtils;
+using Victoria.Resolvers;
 
 namespace SnowyBot.Modules
 {
@@ -56,7 +57,7 @@ namespace SnowyBot.Modules
 
       LavaPlayer player = await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
       if (!DiscordService.tempLavaData.ContainsKey(player))
-        DiscordService.tempLavaData.TryAdd(player, (Context.Guild, false, 300));
+        DiscordService.tempLavaData.TryAdd(player, (Context.Guild, 0, 300, null));
       IUserMessage m3 = await Context.Channel.SendMessageAsync($"{SnowySuccess} {SnowySmallButton} Connected to {voiceState.VoiceChannel.Name}.").ConfigureAwait(false);
       if (guild.DeleteMusic)
       {
@@ -72,7 +73,7 @@ namespace SnowyBot.Modules
       {
         LavaPlayer tempPlayer = await lavaNode.JoinAsync((Context.User as IVoiceState).VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
         if (!DiscordService.tempLavaData.ContainsKey(tempPlayer))
-          DiscordService.tempLavaData.TryAdd(tempPlayer, (Context.Guild, false, 300));
+          DiscordService.tempLavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
       }
 
       bool execute = await CheckUserVoice().ConfigureAwait(false);
@@ -221,7 +222,7 @@ namespace SnowyBot.Modules
       {
         LavaPlayer tempPlayer = await lavaNode.JoinAsync((Context.User as IVoiceState).VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
         if (!DiscordService.tempLavaData.ContainsKey(tempPlayer))
-          DiscordService.tempLavaData.TryAdd(tempPlayer, (Context.Guild, false, 300));
+          DiscordService.tempLavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
       }
 
       int seconds = -1;
@@ -308,7 +309,7 @@ namespace SnowyBot.Modules
       EmbedBuilder builder = new();
       builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Queue {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/929712034310914129.webp?size=512&quality=lossless");
+      builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
       builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
       builder.AddField($"{SnowyPlay} {SnowySmallButton} {player.Track.Title}", player.Track.Url, false);
       foreach (LavaTrack track in player.Queue)
@@ -373,7 +374,7 @@ namespace SnowyBot.Modules
       EmbedBuilder builder = new();
       builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Results {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
       builder.WithColor(new Color(0xcc70ff));
-      builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/929712034310914129.webp?size=512&quality=lossless");
+      builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
       builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
       builder.WithDescription("Page function incomplete for now.");
       foreach (LavaTrack track in search.Tracks)
@@ -751,12 +752,31 @@ namespace SnowyBot.Modules
       }
     }
     [Command("Loop")]
-    public async Task Loop()
+    public async Task Loop([Remainder] string input = null)
     {
-      Guild guild = await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false);
-      if (!DiscordService.tempLavaData.TryGetValue(lavaNode.GetPlayer(Context.Guild), out _))
+      bool execute = await CheckBotVoice().ConfigureAwait(false) && await CheckUserVoice().ConfigureAwait(false) && await CheckPlaying().ConfigureAwait(false);
+      int number = -1;
+      if (input != null)
       {
-        DiscordService.tempLavaData.GetOrAdd(lavaNode.GetPlayer(Context.Guild), (Context.Guild, true, 300));
+        bool parsed = int.TryParse(input, out number);
+        if (!parsed)
+        {
+          execute = false;
+          await Context.Channel.SendMessageAsync("Value must be a number.").ConfigureAwait(false);
+        }
+        if (parsed && number > 10 || number < 1)
+        {
+          execute = false;
+          await Context.Channel.SendMessageAsync("Value must be a number between 1-10.").ConfigureAwait(false);
+        }
+      }
+      if (!execute)
+        return;
+      Guild guild = await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false);
+      LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
+      if (!DiscordService.tempLavaData.ContainsKey(player))
+      {
+        DiscordService.tempLavaData.GetOrAdd(player, (Context.Guild, number, 300, player.Track));
         IUserMessage m1 = await Context.Channel.SendMessageAsync($"{SnowyLoopEnabled} {SnowySmallButton} Loop enabled.").ConfigureAwait(false);
         if (guild.DeleteMusic)
         {
@@ -766,9 +786,10 @@ namespace SnowyBot.Modules
       }
       else
       {
-        DiscordService.tempLavaData.TryGetValue(lavaNode.GetPlayer(Context.Guild), out (IGuild guild, bool loop, int timer) value);
-        DiscordService.tempLavaData.TryUpdate(lavaNode.GetPlayer(Context.Guild), (value.guild, !value.loop, value.timer), (value.guild, value.loop, value.timer));
-        IUserMessage m2 = await Context.Channel.SendMessageAsync($"{(!value.loop ? $"{SnowyLoopEnabled} {SnowySmallButton} Loop enabled." : $"{SnowyLoopDisabled} {SnowySmallButton} Loop disabled.")}").ConfigureAwait(false);
+        DiscordService.tempLavaData.TryGetValue(player, out (IGuild guild, int loop, int timer, LavaTrack track) value);
+        DiscordService.tempLavaData.TryUpdate(player, (value.guild, value.loop == -1 && number == -1 ? 0 : number, value.timer, value.loop == -1 && number == -1 ? null : player?.Track), (value.guild, value.loop, value.timer, value.track));
+
+        IUserMessage m2 = await Context.Channel.SendMessageAsync($"{(value.loop == 0 && number == -1 ? $"{SnowyLoopEnabled} {SnowySmallButton} Loop enabled." : value.loop == 0 || value.loop == -1 && number != -1 ? $"{SnowyLoopLimited} {SnowySmallButton} Loop enabled for {number} loops." : $"{SnowyLoopDisabled} {SnowySmallButton} Loop disabled.")}").ConfigureAwait(false);
         if (guild.DeleteMusic)
         {
           await Task.Delay(5000).ConfigureAwait(false);
@@ -776,12 +797,94 @@ namespace SnowyBot.Modules
         }
       }
     }
+    [Command("Lyrics")]
+    [Alias(new[] { "Lyr" })]
+    public async Task Lyrics([Remainder] string query = null)
+    {
+      bool execute = await CheckBotVoice().ConfigureAwait(false) && await CheckUserVoice().ConfigureAwait(false) && await CheckPlaying().ConfigureAwait(false);
+      if (!execute)
+        return;
+
+      LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
+
+      string g = (await LyricsResolver.SearchGeniusAsync(player.Track).ConfigureAwait(false)).Replace("[", "\n[");
+      //string o = await LyricsResolver.SearchOvhAsync(player.Track).ConfigureAwait(false);
+
+
+      //bool found = !((g == string.Empty || g == null) && (o == string.Empty || o == null));
+
+      //if (!found)
+      //{
+      //  await Context.Channel.SendMessageAsync("No results.").ConfigureAwait(false);
+      //  return;
+      //}
+      if (g != string.Empty && g != null)
+      {
+        await Context.Channel.SendMessageAsync(g).ConfigureAwait(false);
+        return;
+      }
+      //if (o != string.Empty && o != null)
+      //{
+      //  await Context.Channel.SendMessageAsync(o).ConfigureAwait(false);
+      //  return;
+      //}
+      //if (query == null)
+      //{
+      //}
+      //await Context.Channel.SendMessageAsync("Who is the artist?").ConfigureAwait(false);
+      //var result = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+      //if(result.IsSuccess)
+      //{
+      //  string g = await LyricsResolver.SearchGeniusAsync(result.Value.Content, query).ConfigureAwait(false);
+      //  string o = await LyricsResolver.SearchOvhAsync(result.Value.Content, query).ConfigureAwait(false);
+
+      //  bool found = !((g == string.Empty || g == null) && (o == string.Empty || o == null));
+
+      //  if (!found)
+      //  {
+      //    await Context.Channel.SendMessageAsync("No results.").ConfigureAwait(false);
+      //    return;
+      //  }
+      //  if (g != string.Empty && g != null)
+      //  {
+      //    await Context.Channel.SendMessageAsync(g).ConfigureAwait(false);
+      //    return;
+      //  }
+      //  if (o != string.Empty && o != null)
+      //  {
+      //    await Context.Channel.SendMessageAsync(o).ConfigureAwait(false);
+      //    return;
+      //  }
+      //}
+      //else
+      //{
+      //  await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+      //}
+    }
+    [Command("Artwork")]
+    [Alias(new[] { "art" })]
+    public async Task Artwork()
+    {
+      bool execute = await CheckBotVoice().ConfigureAwait(false) && await CheckUserVoice().ConfigureAwait(false) && await CheckPlaying().ConfigureAwait(false);
+      if (!execute)
+        return;
+
+      LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
+
+      string s = await ArtworkResolver.FetchAsync(player.Track).ConfigureAwait(false);
+
+      if (s != string.Empty && s != null)
+        await Context.Channel.SendMessageAsync(s).ConfigureAwait(false);
+      else
+        await Context.Channel.SendMessageAsync("No results.");
+    }
     public async Task TrackEnded(TrackEndedEventArgs args)
     {
-      if (DiscordService.tempLavaData.TryGetValue(args.Player, out (IGuild guild, bool loop, int timer) value) && value.loop && args.Reason == TrackEndReason.Finished)
+      if (DiscordService.tempLavaData.TryGetValue(args.Player, out (IGuild guild, int loop, int timer, LavaTrack track) value) && value.loop != 0 && args.Reason == TrackEndReason.Finished)
       {
-        LavaTrack loopTrack = args.Player.Queue.FirstOrDefault();
-        await args.Player.PlayAsync(loopTrack).ConfigureAwait(false);
+        if (value.loop != -1)
+          DiscordService.tempLavaData.TryUpdate(args.Player, (value.guild, value.loop - 1, value.timer, value.loop - 1 == 0 ? null : value.track), value);
+        await args.Player.PlayAsync(value.track).ConfigureAwait(false);
         return;
       }
 

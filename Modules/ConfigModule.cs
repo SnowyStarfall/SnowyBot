@@ -31,7 +31,7 @@ namespace SnowyBot.Modules
         await ReplyAsync($"Server prefix is `{await guilds.GetGuildPrefix(Context.Guild.Id).ConfigureAwait(false)}`.").ConfigureAwait(false);
         return;
       }
-      if(!user.GuildPermissions.Administrator)
+      if (!user.GuildPermissions.Administrator)
       {
         IUserMessage m = await ReplyAsync($"You lack the permissions to use this command.").ConfigureAwait(false);
         await Task.Delay(5000).ConfigureAwait(false);
@@ -146,6 +146,28 @@ namespace SnowyBot.Modules
       await Task.Delay(5000).ConfigureAwait(false);
       await m5.DeleteAsync().ConfigureAwait(false);
       await guilds.CreateGoodbyeMessage(Context.Guild.Id, channel.Id, message).ConfigureAwait(false);
+    }
+    [Command("Changelog")]
+    [RequireUserPermission(GuildPermission.Administrator)]
+    public async Task Changelog([Remainder] string channel = null)
+    {
+      ulong u = await guilds.GetChangelogChannel(Context.Guild.Id).ConfigureAwait(false);
+      if (u == 0 || channel != null)
+      {
+        if(!TryParseChannel(channel, out ulong channelID))
+        {
+          await Context.Channel.SendMessageAsync($"Incorrect channel mention format.").ConfigureAwait(false);
+          return;
+        }
+
+        await guilds.SetChangelogChannel(Context.Guild.Id, channelID).ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync($"Updates will now appear in {MentionChannel(channelID)}!").ConfigureAwait(false);
+      }
+      else
+      {
+        await Context.Channel.SendMessageAsync($"Updates will no longer appear in {MentionChannel(u)}.").ConfigureAwait(false);
+        await guilds.SetChangelogChannel(Context.Guild.Id, 0).ConfigureAwait(false);
+      }
     }
   }
 }

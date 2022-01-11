@@ -1,7 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Rest;
+using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using SnowyBot.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +19,7 @@ namespace SnowyBot.Database
     {
       context = _context;
     }
+    // Returns a guild //
     public async Task<Guild> GetGuild(ulong id)
     {
       var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
@@ -229,6 +233,42 @@ namespace SnowyBot.Database
       leaderboard.Reverse();
       await context.SaveChangesAsync().ConfigureAwait(false);
       return leaderboard;
+    }
+    // Changelog //
+    public async Task<ulong> GetChangelogChannel(ulong id)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = "!", ChangelogID = 0});
+      await context.SaveChangesAsync().ConfigureAwait(false);
+      return guild.ChangelogID;
+    }
+    public async Task SetChangelogChannel(ulong id, ulong channelID)
+    {
+      var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+      if (guild == null)
+        context.Add(new Guild { ID = id, Prefix = "!", ChangelogID = 0});
+      guild.ChangelogID = channelID;
+      await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+    public async Task SendChangelogUpdate(List<ITextChannel> channels, Embed embed)
+    {
+      foreach(Guild guild in context.Guilds)
+      {
+        if(guild.ChangelogID == 0)
+          continue;
+        ITextChannel channel = channels.Where(x => x.Id == guild.ChangelogID).FirstOrDefault();
+        if (channel == null)
+          continue;
+        try
+        {
+          await channel.SendMessageAsync(null, false, embed);
+        }
+        catch(Exception ex)
+        {
+          Console.Write(ex);
+        }
+      }
     }
   }
 }
