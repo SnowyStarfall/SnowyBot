@@ -47,4 +47,14 @@
     </None>
   </ItemGroup>
 
+	<ItemGroup>
+		<DnxInvisibleContent Include="SnowyBot\.editorconfig" />
+		<DnxInvisibleContent Include="SnowyBot\.gitattributes" />
+		<DnxInvisibleContent Include="SnowyBot\.gitignore" />
+		<DnxInvisibleContent Include="SnowyBot\BuildRelease.bat" />
+		<DnxInvisibleContent Include="SnowyBot\Lavalink.bat" />
+		<DnxInvisibleContent Include="SnowyBot\nuget.config" />
+		<DnxInvisibleContent Include="SnowyBot\SwapToken.bat" />
+	</ItemGroup>
+
 </Project>

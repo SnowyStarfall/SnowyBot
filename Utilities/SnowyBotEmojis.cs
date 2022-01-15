@@ -10,6 +10,7 @@ namespace SnowyBot
   {
     public static readonly string SnowyButton = "<:SnowyButton:929698740757995540>";
     public static readonly string SnowyPlay = "<:SnowyPlay:929698740669935636>";
+    public static readonly string SnowyPlayBackwards = "<:SnowyPlayBackwards:931851487355748352>";
     public static readonly string SnowyPause = "<:SnowyPause:929698740443435038>";
     public static readonly string SnowyStop = "<:SnowyStop:929698740602810418>";
     public static readonly string SnowyRewind = "<:SnowyRewind:929698740409872396>";
@@ -53,6 +54,36 @@ namespace SnowyBot
     public static readonly string SnowyEightDark = "<:SnowyEightDark:929841142600716418>";
     public static readonly string SnowyNineDark = "<:SnowyNineDark:929841142596534302>";
     public static readonly string SnowyTenDark = "<:SnowyTenDark:929841142734917693>";
+    public static readonly string SnowyZeroLeft = "<:SnowyZeroLeft:931900331862925312>";
+    public static readonly string SnowyZeroCenter = "<:SnowyZeroCenter:931900331552567316>";
+    public static readonly string SnowyZeroRight = "<:SnowyZeroRight:931900331678400604>";
+    public static readonly string SnowyOneLeft = "<:SnowyOneLeft:931900331762270228>";
+    public static readonly string SnowyOneCenter = "<:SnowyOneCenter:931900330432667678>";
+    public static readonly string SnowyOneRight = "<:SnowyOneRight:931900330793386045>";
+    public static readonly string SnowyTwoLeft = "<:SnowyTwoLeft:931900331858755615>";
+    public static readonly string SnowyTwoCenter = "<:SnowyTwoCenter:931900331326058598>";
+    public static readonly string SnowyTwoRight = "<:SnowyTwoRight:931900331846148117>";
+    public static readonly string SnowyThreeLeft = "<:SnowyThreeLeft:931900331846144050>";
+    public static readonly string SnowyThreeCenter = "<:SnowyThreeCenter:931900331661594624>";
+    public static readonly string SnowyThreeRight = "<:SnowyThreeRight:931900331527372892>";
+    public static readonly string SnowyFourLeft = "<:SnowyFourLeft:931900331695145010>";
+    public static readonly string SnowyFourCenter = "<:SnowyFourCenter:931900330776625202>";
+    public static readonly string SnowyFourRight = "<:SnowyFourRight:931900331279933441>";
+    public static readonly string SnowyFiveLeft = "<:SnowyFiveLeft:931900331607093270>";
+    public static readonly string SnowyFiveCenter = "<:SnowyFiveCenter:931900330491396108>";
+    public static readonly string SnowyFiveRight = "<:SnowyFiveRight:931900331405742122>";
+    public static readonly string SnowySixLeft = "<:SnowySixLeft:931900331783229440>";
+    public static readonly string SnowySixCenter = "<:SnowySixCenter:931900331066003490>";
+    public static readonly string SnowySixRight = "<:SnowySixRight:931900331783241738>";
+    public static readonly string SnowySevenLeft = "<:SnowySevenLeft:931900331753877524>";
+    public static readonly string SnowySevenCenter = "<:SnowySevenCenter:931900331107950592>";
+    public static readonly string SnowySevenRight = "<:SnowySevenRight:931900331766456401>";
+    public static readonly string SnowyEightLeft = "<:SnowyEightLeft:931900331766480906>";
+    public static readonly string SnowyEightCenter = "<:SnowyEightCenter:931900330826940488>";
+    public static readonly string SnowyEightRight = "<:SnowyEightRight:931900331397382246>";
+    public static readonly string SnowyNineLeft = "<:SnowyNineLeft:931900331695157319>";
+    public static readonly string SnowyNineCenter = "<:SnowyNineCenter:931900330575282186>";
+    public static readonly string SnowyNineRight = "<:SnowyNineRight:931900330252304446>";
 
     public static string NumToLightEmoji(int num)
     {
@@ -87,6 +118,53 @@ namespace SnowyBot
         10 => SnowyTenDark,
         _ => null,
       };
+    }
+    public static string StringToNumbers(int num)
+    {
+      if (num <= 10)
+        return null;
+      string s = num.ToString();
+      string result = "";
+      for(int i = 0; i < s.Length; i++)
+      {
+        bool left = i == 0;
+        bool right = i == s.Length - 1;
+
+        switch(s[i])
+        {
+          case '0':
+            result += left ? SnowyZeroLeft : right ? SnowyZeroRight : SnowyZeroCenter;
+            break;
+          case '1':
+            result += left ? SnowyOneLeft : right ? SnowyOneRight : SnowyOneCenter;
+            break;
+          case '2':
+            result += left ? SnowyTwoLeft : right ? SnowyTwoRight : SnowyTwoCenter;
+            break;
+          case '3':
+            result += left ? SnowyThreeLeft : right ? SnowyThreeRight : SnowyThreeCenter;
+            break;
+          case '4':
+            result += left ? SnowyFourLeft : right ? SnowyFourRight : SnowyFourCenter;
+            break;
+          case '5':
+            result += left ? SnowyFiveLeft : right ? SnowyFiveRight : SnowyFiveCenter;
+            break;
+          case '6':
+            result += left ? SnowySixLeft : right ? SnowySixRight : SnowySixCenter;
+            break;
+          case '7':
+            result += left ? SnowySevenLeft : right ? SnowySevenRight : SnowySevenCenter;
+            break;
+          case '8':
+            result += left ? SnowyEightLeft : right ? SnowyEightRight : SnowyEightCenter;
+            break;
+          case '9':
+            result += left ? SnowyNineLeft : right ? SnowyNineRight : SnowyNineCenter;
+            break;
+        }
+      }
+      return result;
     }
   }
 }

@@ -1,31 +1,28 @@
-﻿using Discord;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Victoria;
-using Victoria.EventArgs;
-using Victoria.Enums;
-using SnowyBot.Handlers;
-using Discord.Commands;
-using Victoria.Responses.Search;
-using Discord.Rest;
-using SnowyBot.Services;
-using YoutubeExplode.Playlists;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Timers;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using Victoria;
+using Victoria.Enums;
+using Victoria.Resolvers;
+using Victoria.EventArgs;
+using Victoria.Responses.Search;
+using YoutubeExplode.Playlists;
+using SnowyBot.Handlers;
+using SnowyBot.Services;
 using SnowyBot.Database;
 using static SnowyBot.SnowyBotUtils;
-using Victoria.Resolvers;
+using SnowyBot.Utilities;
 
 namespace SnowyBot.Modules
 {
-  public sealed class LavalinkModule : ModuleBase
+  public class LavalinkModule : ModuleBase
   {
     public EmbedBuilder builder;
-    public LavalinkModule AudioService { get; set; }
     public readonly LavaNode lavaNode;
     public readonly Guilds guilds;
     public LavalinkModule(LavaNode _lavaNode, Guilds _guilds)
@@ -56,8 +53,8 @@ namespace SnowyBot.Modules
       }
 
       LavaPlayer player = await lavaNode.JoinAsync(voiceState.VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
-      if (!DiscordService.tempLavaData.ContainsKey(player))
-        DiscordService.tempLavaData.TryAdd(player, (Context.Guild, 0, 300, null));
+      if (!DiscordService.lavaData.ContainsKey(player))
+        DiscordService.lavaData.TryAdd(player, (Context.Guild, 0, 300, null));
       IUserMessage m3 = await Context.Channel.SendMessageAsync($"{SnowySuccess} {SnowySmallButton} Connected to {voiceState.VoiceChannel.Name}.").ConfigureAwait(false);
       if (guild.DeleteMusic)
       {
@@ -72,8 +69,8 @@ namespace SnowyBot.Modules
       if (!lavaNode.HasPlayer(Context.Guild))
       {
         LavaPlayer tempPlayer = await lavaNode.JoinAsync((Context.User as IVoiceState).VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
-        if (!DiscordService.tempLavaData.ContainsKey(tempPlayer))
-          DiscordService.tempLavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
+        if (!DiscordService.lavaData.ContainsKey(tempPlayer))
+          DiscordService.lavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
       }
 
       bool execute = await CheckUserVoice().ConfigureAwait(false);
@@ -171,10 +168,6 @@ namespace SnowyBot.Modules
           {
             SearchResponse response = await lavaNode.SearchYouTubeAsync(videos[i].Url).ConfigureAwait(false);
             LavaTrack track = response.Tracks.FirstOrDefault();
-            if (i == 23)
-            {
-              int a;
-            }
             if (playFirst && track != null)
               player.Queue.Enqueue(track);
             if (!playFirst)
@@ -221,8 +214,8 @@ namespace SnowyBot.Modules
       if (!lavaNode.HasPlayer(Context.Guild))
       {
         LavaPlayer tempPlayer = await lavaNode.JoinAsync((Context.User as IVoiceState).VoiceChannel, Context.Channel as ITextChannel).ConfigureAwait(false);
-        if (!DiscordService.tempLavaData.ContainsKey(tempPlayer))
-          DiscordService.tempLavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
+        if (!DiscordService.lavaData.ContainsKey(tempPlayer))
+          DiscordService.lavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
       }
 
       int seconds = -1;
@@ -252,7 +245,7 @@ namespace SnowyBot.Modules
       {
         await player.PlayAsync((PlayArgs args) =>
         {
-          args.Track = player.Queue.FirstOrDefault();
+          args.Track = track;
           if (query != null && seconds != -1)
             args.StartTime = TimeSpan.FromSeconds(seconds);
         }).ConfigureAwait(false);
@@ -293,7 +286,7 @@ namespace SnowyBot.Modules
 
       LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
 
-      if (player.Queue.Count == 0)
+      if (player.Queue.Count == 0 && player.PlayerState is not PlayerState.Playing)
       {
         IUserMessage m = await Context.Channel.SendMessageAsync($"{SnowyError} {SnowySmallButton} Queue is empty.").ConfigureAwait(false);
         if (guild.DeleteMusic)
@@ -304,27 +297,66 @@ namespace SnowyBot.Modules
         return;
       }
 
-      int num = 1;
+      bool cached = DiscordService.lavaData.TryGetValue(player, out (IGuild guild, int loop, int timer, LavaTrack track) value);
 
-      EmbedBuilder builder = new();
-      builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Queue {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
-      builder.WithColor(new Color(0xcc70ff));
-      builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
-      builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-      builder.AddField($"{SnowyPlay} {SnowySmallButton} {player.Track.Title}", player.Track.Url, false);
-      foreach (LavaTrack track in player.Queue)
+      double quotient = player.Track.Position / player.Track.Duration;
+      string position = player.Track.Position.ToString();
+      int index = position.IndexOf('.');
+      int count = (int)(quotient * 10);
+      string time = $"**{(index == -1 ? position : position.Remove(index))}** {SnowyLineLeftEnd}";
+      for (int i = 0; i < 10; i++)
       {
-        builder.AddField($"{NumToDarkEmoji(num)} {SnowySmallButton} {track.Title}", track.Url, false);
-        if (num++ > 9) break;
+        if (i == count)
+          time += SnowyButtonConnected;
+        else
+          time += SnowyLine;
       }
-      if (player.Queue.Count > 10)
-        builder.AddField($"**...**", $"...and {player.Queue.Count - 10} more results.", false);
+      time += $"{SnowyLineRightEnd} **{player.Track.Duration}**";
 
-      await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
+      int embedsNeeded = player.Queue.Count > 10 ? (player.Queue.Count / 10) + 1 : 1;
+      int embedNum = 0;
+
+      List<Embed> embeds = new();
+
+      for (int i = 0; i < embedsNeeded; i++)
+      {
+        EmbedBuilder builder = new();
+        builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Queue {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
+        builder.WithColor(new Color(0xcc70ff));
+        builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
+        builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
+        if (i == 0)
+          builder.AddField($"{SnowyPlay} {SnowySmallButton} {player.Track.Title}", $"{player.Track.Url}\n{time}{(cached && value.loop == -1 ? "\n**Looped infinitely.**" : cached && value.loop > 0 ? $"\n**Looped x {value.loop}.**" : "")}", false);
+        for (int k = 0; k < 10; k++)
+        {
+          int index1 = (embedNum * 10) + k;
+          if (index1 == player.Queue.Count)
+            break;
+          LavaTrack track = player.Queue.ElementAt(index1);
+          string emojis = StringToNumbers(index1 + 1) ?? NumToDarkEmoji(index1 + 1);
+          builder.AddField($"{emojis} {SnowySmallButton} {track.Title}", track.Url, false);
+        }
+        embeds.Add(builder.Build());
+        embedNum++;
+      }
+
+      string[] c = new[] { $"PreviousPageThree:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"PreviousPage:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"NextPage:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"NextPageThree:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}" };
+
+      if (embedsNeeded > 1)
+      {
+        ComponentBuilder cBuilder = new();
+        cBuilder.WithButton(null, c[2], ButtonStyle.Secondary, Emote.Parse(SnowyPlay));
+        cBuilder.WithButton(null, c[3], ButtonStyle.Secondary, Emote.Parse(SnowyFastForward));
+        IUserMessage message = await Context.Channel.SendMessageAsync(null, false, embeds.ElementAt(0), null, null, null, cBuilder.Build()).ConfigureAwait(false);
+        Paginator page = new(embeds, message, c);
+        DiscordService.paginators.TryAdd(message.Id, (page, 300));
+        return;
+      }
+      await Context.Channel.SendMessageAsync(null, false, embeds.ElementAt(0)).ConfigureAwait(false);
       return;
     }
     [Command("Search")]
-    [Alias(new string[] { "s" })]
+    [Alias(new string[] { "S", "Queue", "Q" })]
     public async Task Search([Remainder] string query)
     {
       Guild guild = await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false);
@@ -369,30 +401,49 @@ namespace SnowyBot.Modules
         return;
       }
 
-      int num = 1;
+      int embedsNeeded = search.Tracks.Count > 10 ? (search.Tracks.Count / 10) + 1 : 1;
+      int embedNum = 0;
 
-      EmbedBuilder builder = new();
-      builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Results {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
-      builder.WithColor(new Color(0xcc70ff));
-      builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
-      builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-      builder.WithDescription("Page function incomplete for now.");
-      foreach (LavaTrack track in search.Tracks)
+      List<Embed> embeds = new();
+
+      for (int i = 0; i < embedsNeeded; i++)
       {
-        builder.AddField($"{NumToDarkEmoji(num)} {SnowySmallButton} {track.Title}", $"{track.Url}", false);
-        if (num++ > 9) break;
+        EmbedBuilder builder = new();
+        builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Results {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
+        builder.WithColor(new Color(0xcc70ff));
+        builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
+        builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
+        for (int k = 0; k < 10; k++)
+        {
+          int index1 = (embedNum * 10) + k;
+          if (index1 == search.Tracks.Count)
+            break;
+          LavaTrack track = search.Tracks.ElementAt(index1);
+          string emojis = StringToNumbers(index1 + 1) ?? NumToDarkEmoji(index1 + 1);
+          builder.AddField($"{emojis} {SnowySmallButton} {track.Title}", track.Url, false);
+        }
+        embeds.Add(builder.Build());
+        embedNum++;
       }
-      if (player.Queue.Count > 10)
-        builder.AddField("**...**", $"...and {player.Queue.Count - 10} more results.", false);
+      string[] c = new[] { $"PreviousPageThree:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"PreviousPage:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"NextPage:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"NextPageThree:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}" };
 
-      IUserMessage m3 = await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
-      var result = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty) && (EmbedHandler.EmojiToNum(x.Content) != -1 || int.TryParse(x.Content, out _) && (int.Parse(x.Content) > 0 && int.Parse(x.Content) <= 10)), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
+      if (embedsNeeded > 1)
+      {
+        ComponentBuilder cBuilder = new();
+        cBuilder.WithButton(null, c[2], ButtonStyle.Secondary, Emote.Parse(SnowyPlay));
+        cBuilder.WithButton(null, c[3], ButtonStyle.Secondary, Emote.Parse(SnowyFastForward));
+        IUserMessage message = await Context.Channel.SendMessageAsync(null, false, embeds.ElementAt(0), null, null, null, cBuilder.Build()).ConfigureAwait(false);
+        Paginator page = new(embeds, message, c);
+        DiscordService.paginators.TryAdd(message.Id, (page, 300));
+      }
+      else
+      {
+        await Context.Channel.SendMessageAsync(null, false, embeds.ElementAt(0)).ConfigureAwait(false);
+      }
+      var result = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty) && (int.TryParse(x.Content, out _) && (int.Parse(x.Content) > 0 && int.Parse(x.Content) <= search.Tracks.Count - 1)), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
       if (result.IsSuccess)
       {
-        int num2 = EmbedHandler.EmojiToNum(result.Value.Content);
-        if (num2 == -1)
-          num2 = int.Parse(result.Value.Content);
-        await m3.DeleteAsync().ConfigureAwait(false);
+        int num2 = int.Parse(result.Value.Content);
         if (player.PlayerState is PlayerState.Paused || player.PlayerState is PlayerState.Playing)
           player.Queue.Enqueue(search.Tracks.ElementAt(num2 - 1));
         else
@@ -464,7 +515,23 @@ namespace SnowyBot.Modules
 
       LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
 
-      IUserMessage m3 = await Context.Channel.SendMessageAsync($"{(player.PlayerState is PlayerState.Playing ? SnowyPlay : SnowyPause)}**Now Playing:** {player.Track.Title}\n{player.Track.Url}").ConfigureAwait(false);
+      bool cached = DiscordService.lavaData.TryGetValue(player, out (IGuild guild, int loop, int timer, LavaTrack track) value);
+
+      double quotient = player.Track.Position / player.Track.Duration;
+      string position = player.Track.Position.ToString();
+      int index = position.IndexOf('.');
+      int count = (int)(quotient * 10);
+      string time = $"**{(index == -1 ? position : position.Remove(index))}** {SnowyLineLeftEnd}";
+      for (int i = 0; i < 10; i++)
+      {
+        if (i == count)
+          time += SnowyButtonConnected;
+        else
+          time += SnowyLine;
+      }
+      time += $"{SnowyLineRightEnd} **{player.Track.Duration}**";
+
+      IUserMessage m3 = await Context.Channel.SendMessageAsync($"{(player.PlayerState is PlayerState.Playing ? SnowyPlay : SnowyPause)}** Now Playing:** {player.Track.Title}\n{player.Track.Url}\n{time}{(cached && value.loop == -1 ? "\n**Looped infinitely.**" : cached && value.loop > 0 ? $"\n**Looped x {value.loop}.**" : "")}").ConfigureAwait(false);
       if (guild.DeleteMusic)
       {
         await Task.Delay(5000).ConfigureAwait(false);
@@ -509,8 +576,8 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await player.SkipAsync().ConfigureAwait(false);
         await player.PlayAsync(player.Queue.First()).ConfigureAwait(false);
+        await player.SkipAsync().ConfigureAwait(false);
         IUserMessage m4 = await Context.Channel.SendMessageAsync($"{SnowySkipForward} {SnowySmallButton} **Now Playing:**\n{player.Track.Title}\n({player.Track.Url})").ConfigureAwait(false);
         if (guild.DeleteMusic)
         {
@@ -774,9 +841,9 @@ namespace SnowyBot.Modules
         return;
       Guild guild = await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false);
       LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
-      if (!DiscordService.tempLavaData.ContainsKey(player))
+      if (!DiscordService.lavaData.ContainsKey(player))
       {
-        DiscordService.tempLavaData.GetOrAdd(player, (Context.Guild, number, 300, player.Track));
+        DiscordService.lavaData.GetOrAdd(player, (Context.Guild, number, 300, player.Track));
         IUserMessage m1 = await Context.Channel.SendMessageAsync($"{SnowyLoopEnabled} {SnowySmallButton} Loop enabled.").ConfigureAwait(false);
         if (guild.DeleteMusic)
         {
@@ -786,8 +853,8 @@ namespace SnowyBot.Modules
       }
       else
       {
-        DiscordService.tempLavaData.TryGetValue(player, out (IGuild guild, int loop, int timer, LavaTrack track) value);
-        DiscordService.tempLavaData.TryUpdate(player, (value.guild, value.loop == -1 && number == -1 ? 0 : number, value.timer, value.loop == -1 && number == -1 ? null : player?.Track), (value.guild, value.loop, value.timer, value.track));
+        DiscordService.lavaData.TryGetValue(player, out (IGuild guild, int loop, int timer, LavaTrack track) value);
+        DiscordService.lavaData.TryUpdate(player, (value.guild, value.loop == -1 && number == -1 ? 0 : number, value.timer, value.loop == -1 && number == -1 ? null : player?.Track), (value.guild, value.loop, value.timer, value.track));
 
         IUserMessage m2 = await Context.Channel.SendMessageAsync($"{(value.loop == 0 && number == -1 ? $"{SnowyLoopEnabled} {SnowySmallButton} Loop enabled." : value.loop == 0 || value.loop == -1 && number != -1 ? $"{SnowyLoopLimited} {SnowySmallButton} Loop enabled for {number} loops." : $"{SnowyLoopDisabled} {SnowySmallButton} Loop disabled.")}").ConfigureAwait(false);
         if (guild.DeleteMusic)
@@ -880,10 +947,10 @@ namespace SnowyBot.Modules
     }
     public async Task TrackEnded(TrackEndedEventArgs args)
     {
-      if (DiscordService.tempLavaData.TryGetValue(args.Player, out (IGuild guild, int loop, int timer, LavaTrack track) value) && value.loop != 0 && args.Reason == TrackEndReason.Finished)
+      if (DiscordService.lavaData.TryGetValue(args.Player, out (IGuild guild, int loop, int timer, LavaTrack track) value) && value.loop != 0 && args.Reason == TrackEndReason.Finished)
       {
         if (value.loop != -1)
-          DiscordService.tempLavaData.TryUpdate(args.Player, (value.guild, value.loop - 1, value.timer, value.loop - 1 == 0 ? null : value.track), value);
+          DiscordService.lavaData.TryUpdate(args.Player, (value.guild, value.loop - 1, value.timer, value.loop - 1 == 0 ? null : value.track), value);
         await args.Player.PlayAsync(value.track).ConfigureAwait(false);
         return;
       }
@@ -900,14 +967,24 @@ namespace SnowyBot.Modules
       LavaTrack track = args.Player.Queue.FirstOrDefault();
       Guild guild = await guilds.GetGuild((args.Player.VoiceChannel as SocketVoiceChannel).Guild.Id).ConfigureAwait(false);
       await args.Player.PlayAsync(track).ConfigureAwait(false);
-      IUserMessage m = await args.Player.TextChannel.SendMessageAsync($"{SnowySkipForward} {SnowySmallButton}\n{track.Title}\n{track.Url}").ConfigureAwait(false);
+      IUserMessage m = await args.Player.TextChannel.SendMessageAsync($"{SnowySkipForward} {SnowySmallButton} **Now Playing:**\n{track.Title}\n{track.Url}").ConfigureAwait(false);
       if (guild.DeleteMusic)
       {
         await Task.Delay(5000).ConfigureAwait(false);
         await m.DeleteAsync().ConfigureAwait(false);
       }
 
-      args.Player.Queue.TryDequeue(out LavaTrack value2);
+      args.Player.Queue.TryDequeue(out _);
+
+      if (args.Player.Queue.Count == 0 && args.Player.Track == null)
+      {
+        IUserMessage m2 = await args.Player.TextChannel.SendMessageAsync($"{SnowySuccess} {SnowySmallButton} **Queue finished.**").ConfigureAwait(false);
+        if (guild.DeleteMusic)
+        {
+          await Task.Delay(5000).ConfigureAwait(false);
+          await m2.DeleteAsync().ConfigureAwait(false);
+        }
+      }
     }
     public async Task<bool> CheckBotVoice()
     {
@@ -984,7 +1061,7 @@ namespace SnowyBot.Modules
     {
       int count = DiscordService.lavaNode.Players.Count();
       await DiscordService.client.SetGameAsync($"music for {count} server{(count == 1 ? "" : "s")}.").ConfigureAwait(false);
-      await LoggingService.LogAsync("timer", LogSeverity.Info, $"Status timer elapsed. Status set to -- \"Playing music for {DiscordService.lavaNode.Players.Count()} servers.\" --").ConfigureAwait(false);
+      await LoggingService.LogAsync("timer", LogSeverity.Info, $"Status timer elapsed. Status set to: Playing music for {count} server{(count == 1 ? "" : "s")}.").ConfigureAwait(false);
     }
   }
 }

@@ -1,4 +1,5 @@
-﻿using SnowyBot.Structs;
+﻿using SnowyBot.Services;
+using SnowyBot.Structs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,8 @@ namespace SnowyBot.Database
                    .ConfigureAwait(false);
       if (character == null)
       {
-        throw new Exception("Character was null.");
+        await LoggingService.LogAsync("CHAR", Discord.LogSeverity.Error, $"Character was null when editing character.\nUser: {userID}\nCharacter: {characterID}\nEdit Type: {type}\nValue: {value}").ConfigureAwait(false);
+        return;
       }
       switch (type)
       {
@@ -114,6 +116,14 @@ namespace SnowyBot.Database
                    .Where(x => x.UserID == userID && x.CharacterID == characterID)
                    .FirstOrDefaultAsync()
                    .ConfigureAwait(false);
+    }
+    public async Task<List<Character>> ListCharacters(ulong userID)
+    {
+      return await context.Characters
+             .AsAsyncEnumerable()
+             .Where(x => x.UserID == userID)
+             .ToListAsync()
+             .ConfigureAwait(false);
     }
   }
 }

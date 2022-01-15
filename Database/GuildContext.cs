@@ -10,7 +10,9 @@ namespace SnowyBot.Database
   {
     public DbSet<Guild> Guilds { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-      => options.UseMySql("server=localhost;user=root;database=snowybot_guilds;port=3306;Connect Timeout=5;", new MySqlServerVersion(new Version(0, 0, 0, 1)));
+    {
+      options.UseMySql("server=localhost;user=root;database=snowybot_guilds;port=3306;Connect Timeout=5;", new MySqlServerVersion(new Version(0, 0, 0, 1)));
+    }
   }
   public class Guild
   {

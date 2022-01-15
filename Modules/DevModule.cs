@@ -7,6 +7,7 @@ using SnowyBot.Database;
 using SnowyBot.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using YoutubeExplode.Playlists;
 using static SnowyBot.SnowyBotUtils;
@@ -29,8 +30,7 @@ namespace SnowyBot.Modules
     {
       IUser user = await DiscordService.client.GetUserAsync(ulong.Parse(ID)).ConfigureAwait(false);
       RestUser rest = user as RestUser;
-      SocketUser socket = user as SocketUser;
-      EmbedBuilder builder = new EmbedBuilder();
+      EmbedBuilder builder = new();
       builder.WithAuthor(Context.User.Username, Context.User.GetAvatarUrl());
       builder.WithThumbnailUrl(user.GetAvatarUrl());
       builder.WithTitle(user.Username + "#" + user.Discriminator);
@@ -99,6 +99,18 @@ namespace SnowyBot.Modules
                               $"{SnowySmallButton} Soundcloud searches work now.\n" +
                               $"{SnowySmallButton} Link should always play correct video.");
       await guilds.SendChangelogUpdate(channels, builder.Build()).ConfigureAwait(false);
+    }
+    [Command("Image")]
+    [RequireOwner]
+    public async Task Image([Remainder] string query)
+    {
+      IEnumerable<ImgurResult> results = await SearchAsync(query).ConfigureAwait(false);
+      if(results == null)
+      {
+        await Context.Channel.SendMessageAsync("No results found.").ConfigureAwait(false);
+        return;
+      }
+      await Context.Channel.SendMessageAsync(results.ToList().First().Url).ConfigureAwait(false);
     }
   }
 }

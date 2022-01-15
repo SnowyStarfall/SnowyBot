@@ -15,10 +15,7 @@ namespace SnowyBot.Database
   {
     private readonly GuildContext context;
 
-    public Guilds(GuildContext _context)
-    {
-      context = _context;
-    }
+    public Guilds(GuildContext _context) => context = _context;
     // Returns a guild //
     public async Task<Guild> GetGuild(ulong id)
     {

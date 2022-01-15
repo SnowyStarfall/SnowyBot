@@ -28,7 +28,10 @@ namespace SnowyBot.Modules
           continue;
         string[] s2 = s.Split(';');
         user = DiscordService.client.GetUser(ulong.Parse(s2[0]));
-        result += ($"{SnowyBotUtils.NumToDarkEmoji(place)} {user.Mention} {SnowyBotUtils.SnowySmallButton} `{s2[1]}` points. {SnowyBotUtils.SnowyUniversalStrong}\n");
+        if (user == null)
+          result += ($"{SnowyBotUtils.NumToDarkEmoji(place)} Invalid-user {SnowyBotUtils.SnowySmallButton} `{s2[1]}` points. {SnowyBotUtils.SnowyUniversalStrong}\n");
+        else
+          result += ($"{SnowyBotUtils.NumToDarkEmoji(place)} {user.Mention} {SnowyBotUtils.SnowySmallButton} `{s2[1]}` points. {SnowyBotUtils.SnowyUniversalStrong}\n");
         place++;
         if (place > 10)
           break;

@@ -20,12 +20,13 @@ using System.Timers;
 using Discord.Interactions;
 using System.Reflection;
 using System.Collections.Generic;
+using SnowyBot.Utilities;
 
 namespace SnowyBot.Services
 {
   public static class DiscordService
   {
-    private static BotConfig config;
+    public static BotConfig config;
 
     public static readonly DiscordSocketClient client;
     public static readonly YoutubeClient youTube;
@@ -47,10 +48,10 @@ namespace SnowyBot.Services
     public static readonly RoleModule roleModule;
     public static readonly PointsModule pointsModule;
 
-    public static ConcurrentDictionary<LavaPlayer, (IGuild guild, int loop, int timer, LavaTrack trackToLoop)> tempLavaData;
-    public static ConcurrentDictionary<ulong, (IUserMessage message, int timer, bool webHook, ulong author)> tempMessageData;
-    public static ConcurrentDictionary<Guild, List<(ulong userID, int messages, int timer)>> tempPointsCooldownData;
-    public static ConcurrentDictionary<IGuild, int> voiceChannelData;
+    public static ConcurrentDictionary<LavaPlayer, (IGuild guild, int loop, int timer, LavaTrack trackToLoop)> lavaData;
+    public static ConcurrentDictionary<ulong, (IUserMessage message, int timer, bool webHook, ulong author)> messageData;
+    public static ConcurrentDictionary<Guild, List<(ulong userID, int messages, int timer)>> pointCooldownData;
+    public static ConcurrentDictionary<ulong, (Paginator paginator, int timer)> paginators;
 
     public static readonly Timer statusTimer;
     public static readonly Timer secondTimer;
@@ -88,7 +89,7 @@ namespace SnowyBot.Services
       client.UserLeft += Client_UserLeft;
 
       // Status Timer //
-      statusTimer = new Timer(30000);
+      statusTimer = new Timer(60000);
       statusTimer.Elapsed += lavaModule.StatusTumer_Elapsed;
       statusTimer.Enabled = true;
 
@@ -101,10 +102,10 @@ namespace SnowyBot.Services
       GC.KeepAlive(secondTimer);
 
       // Temp data caches //
-      tempLavaData = new();
-      tempMessageData = new();
-      tempPointsCooldownData = new();
-      voiceChannelData = new();
+      lavaData = new();
+      messageData = new();
+      pointCooldownData = new();
+      paginators = new();
     }
 
     public static async Task InitializeAsync()
@@ -229,23 +230,23 @@ namespace SnowyBot.Services
     private static async void SecondTimer_Elapsed(object sender, ElapsedEventArgs e)
     {
       // Message cache handling
-      if (!tempMessageData.IsEmpty)
+      if (!messageData.IsEmpty)
       {
-        for (int i = 0; i < tempMessageData.Count; i++)
+        for (int i = 0; i < messageData.Count; i++)
         {
-          if (tempMessageData.Count <= i)
+          if (messageData.Count <= i)
             break;
-          tempMessageData.TryUpdate(tempMessageData.ElementAt(i).Key, (tempMessageData.ElementAt(i).Value.message, tempMessageData.ElementAt(i).Value.timer - 1, tempMessageData.ElementAt(i).Value.webHook, tempMessageData.ElementAt(i).Value.author), tempMessageData.ElementAt(i).Value);
-          if (tempMessageData.ElementAt(i).Value.timer <= 0)
-            tempMessageData.TryRemove(tempMessageData.ElementAt(i));
+          messageData.TryUpdate(messageData.ElementAt(i).Key, (messageData.ElementAt(i).Value.message, messageData.ElementAt(i).Value.timer - 1, messageData.ElementAt(i).Value.webHook, messageData.ElementAt(i).Value.author), messageData.ElementAt(i).Value);
+          if (messageData.ElementAt(i).Value.timer <= 0)
+            messageData.TryRemove(messageData.ElementAt(i));
         }
       }
       // XP Cooldown handling
-      if (!tempPointsCooldownData.IsEmpty)
+      if (!pointCooldownData.IsEmpty)
       {
-        for (int i = 0; i < tempPointsCooldownData.Count; i++)
+        for (int i = 0; i < pointCooldownData.Count; i++)
         {
-          List<(ulong userID, int messages, int timer)> values = tempPointsCooldownData.ElementAt(i).Value;
+          List<(ulong userID, int messages, int timer)> values = pointCooldownData.ElementAt(i).Value;
           for (int k = 0; k < values.Count; k++)
           {
             (ulong userID, int messages, int timer) value = values.ElementAt(k);
@@ -266,47 +267,57 @@ namespace SnowyBot.Services
             }
           }
           if (values.Count == 0)
-            tempPointsCooldownData.TryRemove(tempPointsCooldownData.ElementAt(i).Key, out _);
+            pointCooldownData.TryRemove(pointCooldownData.ElementAt(i).Key, out _);
           else
-            tempPointsCooldownData.TryUpdate(tempPointsCooldownData.ElementAt(i).Key, values, tempPointsCooldownData.ElementAt(i).Value);
+            pointCooldownData.TryUpdate(pointCooldownData.ElementAt(i).Key, values, pointCooldownData.ElementAt(i).Value);
         }
       }
       // LavaPlayer inactivity handling
-      if (!tempLavaData.IsEmpty)
+      if (!lavaData.IsEmpty)
       {
-        for (int i = 0; i < tempLavaData.Count; i++)
+        for (int i = 0; i < lavaData.Count; i++)
         {
-          if (tempLavaData.ElementAt(i).Key == null)
+          if (lavaData.ElementAt(i).Key == null)
           {
-            tempLavaData.TryRemove(tempLavaData.ElementAt(i).Key, out _);
+            lavaData.TryRemove(lavaData.ElementAt(i).Key, out _);
             continue;
           }
-          bool active = tempLavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.None && tempLavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.Stopped && tempLavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.Paused;
-          var users = (new List<IGuildUser>((await tempLavaData.ElementAt(i).Key.VoiceChannel.GetUsersAsync().ToListAsync().ConfigureAwait(false)).FirstOrDefault())).Where(x => x.VoiceChannel != null && tempLavaData.ElementAt(i).Key.VoiceChannel != null && x.VoiceChannel == tempLavaData.ElementAt(i).Key.VoiceChannel && !x.IsBot);
+          bool active = lavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.None && lavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.Stopped && lavaData.ElementAt(i).Key.PlayerState != Victoria.Enums.PlayerState.Paused;
+          var users = (new List<IGuildUser>((await lavaData.ElementAt(i).Key.VoiceChannel.GetUsersAsync().ToListAsync().ConfigureAwait(false)).FirstOrDefault())).Where(x => x.VoiceChannel != null && lavaData.ElementAt(i).Key.VoiceChannel != null && x.VoiceChannel == lavaData.ElementAt(i).Key.VoiceChannel && !x.IsBot);
           if (users == null)
           {
-            tempLavaData.TryRemove(tempLavaData.ElementAt(i).Key, out _);
+            lavaData.TryRemove(lavaData.ElementAt(i).Key, out _);
             continue;
           }
           //if (tempUsers != null)
-          //  users = users.Where(x => x.VoiceChannel != null && tempLavaData.ElementAt(i).Key.VoiceChannel != null && x.VoiceChannel == tempLavaData.ElementAt(i).Key.VoiceChannel).ToList();
+          //  users = users.Where => x.VoiceChannel != null && tempLavaData.ElementAt(i).Key.VoiceChannel != null && x.VoiceChannel == tempLavaData.ElementAt(i).Key.VoiceChannel).ToList();
 
           if (!users.Any() || !active)
           {
-            tempLavaData.TryUpdate(tempLavaData.ElementAt(i).Key, (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer - 1, tempLavaData.ElementAt(i).Value.trackToLoop), (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer, tempLavaData.ElementAt(i).Value.trackToLoop));
-            if (tempLavaData.ElementAt(i).Value.timer <= 0)
+            lavaData.TryUpdate(lavaData.ElementAt(i).Key, (lavaData.ElementAt(i).Value.guild, lavaData.ElementAt(i).Value.loop, lavaData.ElementAt(i).Value.timer - 1, lavaData.ElementAt(i).Value.trackToLoop), (lavaData.ElementAt(i).Value.guild, lavaData.ElementAt(i).Value.loop, lavaData.ElementAt(i).Value.timer, lavaData.ElementAt(i).Value.trackToLoop));
+            if (lavaData.ElementAt(i).Value.timer <= 0)
             {
-              await tempLavaData.ElementAt(i).Key.TextChannel.SendMessageAsync("I have been inactive for more than five minutes. Disconnecting.").ConfigureAwait(false);
-              await tempLavaData.ElementAt(i).Key.StopAsync().ConfigureAwait(false);
-              await lavaNode.LeaveAsync(tempLavaData.ElementAt(i).Key.VoiceChannel).ConfigureAwait(false);
-              tempLavaData.TryRemove(tempLavaData.ElementAt(i).Key, out _);
+              await lavaData.ElementAt(i).Key.TextChannel.SendMessageAsync("I have been inactive for more than five minutes. Disconnecting.").ConfigureAwait(false);
+              await lavaData.ElementAt(i).Key.StopAsync().ConfigureAwait(false);
+              await lavaNode.LeaveAsync(lavaData.ElementAt(i).Key.VoiceChannel).ConfigureAwait(false);
+              lavaData.TryRemove(lavaData.ElementAt(i).Key, out _);
               continue;
             }
           }
           else
           {
-            tempLavaData.TryUpdate(tempLavaData.ElementAt(i).Key, (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, 300, tempLavaData.ElementAt(i).Value.trackToLoop), (tempLavaData.ElementAt(i).Value.guild, tempLavaData.ElementAt(i).Value.loop, tempLavaData.ElementAt(i).Value.timer, tempLavaData.ElementAt(i).Value.trackToLoop));
+            lavaData.TryUpdate(lavaData.ElementAt(i).Key, (lavaData.ElementAt(i).Value.guild, lavaData.ElementAt(i).Value.loop, 300, lavaData.ElementAt(i).Value.trackToLoop), (lavaData.ElementAt(i).Value.guild, lavaData.ElementAt(i).Value.loop, lavaData.ElementAt(i).Value.timer, lavaData.ElementAt(i).Value.trackToLoop));
           }
+        }
+      }
+      // Paginator handling
+      if (!paginators.IsEmpty)
+      {
+        for (int i = 0; i < paginators.Count; i++)
+        {
+          paginators.TryUpdate(paginators.ElementAt(i).Key, (paginators.ElementAt(i).Value.paginator, paginators.ElementAt(i).Value.timer - 1), (paginators.ElementAt(i).Value.paginator, paginators.ElementAt(i).Value.timer));
+          if (paginators.ElementAt(i).Value.timer <= 0)
+            paginators.TryRemove(paginators.ElementAt(i));
         }
       }
     }

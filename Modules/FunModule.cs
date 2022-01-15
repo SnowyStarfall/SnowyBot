@@ -14,10 +14,9 @@ namespace SnowyBot.Modules
     public readonly Guilds guilds;
     public FunModule(Guilds _guilds) => guilds = _guilds;
 
-    public Random random = new Random();
+    public Random random = new();
 
     [Command("Question")]
-    [Alias(new string[] { "Q" })]
     public async Task Question([Remainder] string question = null)
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -65,8 +64,8 @@ namespace SnowyBot.Modules
                                           "Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very doubtful."};
       await Context.Message.ReplyAsync($"{responses[response]}").ConfigureAwait(false);
     }
-    [Command("a")]
-    [Alias(new string[] { "screm" })]
+    [Command("A")]
+    [Alias(new string[] { "Screm" })]
     public async Task A([Remainder] string letter)
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -90,7 +89,7 @@ namespace SnowyBot.Modules
       await Context.Message.ReplyAsync(reply).ConfigureAwait(false);
     }
     [Command("Info")]
-    [Alias(new string[] { "server" })]
+    [Alias(new string[] { "Server", "Guild" })]
     public async Task Info()
     {
       Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
@@ -124,10 +123,9 @@ namespace SnowyBot.Modules
       await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
     }
     [Command("ratewaifu")]
-    [Alias(new string[] { "rate", "waifu" })]
+    [Alias(new string[] { "Rate", "Waifu" })]
     public async Task RateWaifu([Remainder] string mention = null)
     {
-
       if (Context.Message.MentionedUserIds.Count > 0)
       {
         IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
@@ -173,7 +171,7 @@ namespace SnowyBot.Modules
         return;
       }
     }
-    [Command("jumbo")]
+    [Command("Jumbo")]
     public async Task Jumbo([Remainder] string emoji)
     {
       bool valid = Emote.TryParse(emoji, out var emote);
@@ -181,7 +179,7 @@ namespace SnowyBot.Modules
         return;
       await Context.Channel.SendMessageAsync(emote.Url).ConfigureAwait(false);
     }
-    [Command("awoo")]
+    [Command("Awoo")]
     public async Task Awoo()
     {
       int amount = random.Next(0, 101);

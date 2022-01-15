@@ -8,6 +8,7 @@ using SnowyBot.Database;
 using SnowyBot.Handlers;
 using SnowyBot.Services;
 using SnowyBot.Structs;
+using SnowyBot.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -45,6 +46,8 @@ namespace SnowyBot.Handlers
     private async Task Client_MessageRecieved(SocketMessage arg)
     {
       SocketUserMessage socketMessage = arg as SocketUserMessage;
+      if (socketMessage == null)
+        return;
       SocketCommandContext context = new(client, socketMessage);
 
       if (arg is not SocketUserMessage message || message.Author.IsBot || message.Author.IsWebhook || message.Channel is IPrivateChannel)
@@ -85,7 +88,7 @@ namespace SnowyBot.Handlers
           DiscordWebhookClient webClient = new(url);
           ulong messageID = await webClient.SendMessageAsync(context.Message.Content.Remove(0, array[0].Length + 1), false, null, character.Name, character.AvatarURL).ConfigureAwait(false);
           IUserMessage message1 = await context.Channel.GetMessageAsync(messageID).ConfigureAwait(false) as IUserMessage;
-          DiscordService.tempMessageData.TryAdd(messageID, (message1, 600, true, context.User.Id));
+          DiscordService.messageData.TryAdd(messageID, (message1, 600, true, context.User.Id));
         }
         catch (Exception ex)
         {
@@ -96,15 +99,14 @@ namespace SnowyBot.Handlers
         return;
       }
 
-      Guild guild = await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false);
       (int min, int max) = await guilds.GetGuildPointRange(context.Guild.Id).ConfigureAwait(false);
       ulong amount = (ulong)random.Next(min, max + 1);
 
       if (context.Guild != null)
       {
-        if (DiscordService.tempPointsCooldownData.ContainsKey(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false)))
+        if (DiscordService.pointCooldownData.ContainsKey(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false)))
         {
-          DiscordService.tempPointsCooldownData.TryGetValue(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false), out List<(ulong userID, int messages, int timer)> values);
+          DiscordService.pointCooldownData.TryGetValue(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false), out List<(ulong userID, int messages, int timer)> values);
           (ulong userID, int messages, int timer) tempValue = (0, 0, 0);
           (ulong userID, int messages, int timer) resultValue = (0, 0, 0);
 
@@ -136,7 +138,7 @@ namespace SnowyBot.Handlers
           List<(ulong userID, int messages, int timer)> values = new();
           await guilds.UpdateGuildPoints(context.Guild.Id, context.User.Id, amount).ConfigureAwait(false);
           values.Add((context.User.Id, 1, 5));
-          DiscordService.tempPointsCooldownData.TryAdd(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false), values);
+          DiscordService.pointCooldownData.TryAdd(await guilds.GetGuild(context.Guild.Id).ConfigureAwait(false), values);
         }
       }
 
@@ -153,13 +155,13 @@ namespace SnowyBot.Handlers
     {
       if (DateTime.Now - arg2.Timestamp >= TimeSpan.FromMinutes(1))
         return;
-      if (DiscordService.tempMessageData.ContainsKey(arg2.Id))
+      if (DiscordService.messageData.ContainsKey(arg2.Id))
       {
         await Client_MessageRecieved(arg2).ConfigureAwait(false);
-        DiscordService.tempMessageData.Remove(arg2.Id, out _);
+        DiscordService.messageData.Remove(arg2.Id, out _);
         return;
       }
-      DiscordService.tempMessageData.TryAdd(arg2.Id, (arg2 as IUserMessage, 60, false, arg2.Author.Id));
+      DiscordService.messageData.TryAdd(arg2.Id, (arg2 as IUserMessage, 60, false, arg2.Author.Id));
     }
     private async Task Client_InteractionCreated(SocketInteraction interaction)
     {
@@ -181,14 +183,14 @@ namespace SnowyBot.Handlers
     {
       try
       {
-        if (DiscordService.tempMessageData.ContainsKey(arg1.Id))
+        if (DiscordService.messageData.ContainsKey(arg1.Id))
         {
-          DiscordService.tempMessageData.TryGetValue(arg1.Id, out (IUserMessage message, int timer, bool webHook, ulong author) value);
+          DiscordService.messageData.TryGetValue(arg1.Id, out (IUserMessage message, int timer, bool webHook, ulong author) value);
           if (value.webHook && value.author == arg3.UserId && arg3.Emote.Name == "❌")
           {
             try { await value.message.DeleteAsync().ConfigureAwait(false); }
             catch (Exception ex) { Console.Write(ex); }
-            DiscordService.tempMessageData.TryRemove(arg1.Id, out _);
+            DiscordService.messageData.TryRemove(arg1.Id, out _);
           }
         }
       }
@@ -224,7 +226,6 @@ namespace SnowyBot.Handlers
     }
     private async Task HandleComponent(SocketMessageComponent component)
     {
-
       string[] data = component.Data.CustomId.Split(":");
       if (component.User.Id != ulong.Parse(data[1]))
         return;
@@ -439,6 +440,9 @@ namespace SnowyBot.Handlers
         case string s when s.Contains("ReactiveRoles"):
           HandleReactiveRoles(component, data).ConfigureAwait(false);
           break;
+        case string s when s.Contains("Page"):
+          HandlePaginators(component, data).ConfigureAwait(false);
+          break;
       }
     }
     private async Task HandleCharacterEdits(SocketMessageComponent component, CharacterDataType type, string[] data)
@@ -447,6 +451,31 @@ namespace SnowyBot.Handlers
       // data[0] = User ID
       // data[1] = Character ID
       // data[2] = Channel ID
+      Embed CreateCharEmbed(Character character)
+      {
+        EmbedBuilder builder = new();
+        builder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
+        builder.WithThumbnailUrl(character.AvatarURL);
+        builder.WithTitle(character.Name);
+        builder.WithDescription(character.Description);
+        builder.AddField("Prefix", character.Prefix, true);
+        builder.AddField("Gender", character.Gender, true);
+        builder.AddField("Sex", character.Sex, true);
+        builder.AddField("Species", character.Species, true);
+        builder.AddField("Age", character.Age + " years", true);
+        builder.AddField("Height", character.Height, true);
+        builder.AddField("Weight", character.Weight, true);
+        builder.AddField("Orientation", character.Orientation, true);
+        builder.AddField("Created", character.CreationDate, true);
+        if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
+          builder.WithImageUrl(character.ReferenceURL);
+        builder.WithCurrentTimestamp();
+        builder.WithColor(new Color(0xcc70ff));
+        builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
+        return builder.Build();
+      }
+      bool timeOut = false;
+
       switch (type)
       {
         case CharacterDataType.Prefix:
@@ -466,33 +495,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Prefix, prefixResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Prefix", $"EditCharacterPrefix:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
             await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -502,9 +511,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage1 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage1.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Name:
@@ -524,33 +531,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Name, nameResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Name", $"EditCharacterName:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
             await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -560,9 +547,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage2 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage2.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Gender:
@@ -582,33 +567,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Gender, genderResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Gender", $"EditCharacterGender:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -618,9 +583,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage3 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage3.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Sex:
@@ -640,33 +603,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Sex, sexResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Sex", $"EditCharacterSex:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -676,9 +619,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage4 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage4.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Species:
@@ -698,33 +639,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Species, speciesResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Species", $"EditCharacterSpecies:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -734,9 +655,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage5 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage5.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Age:
@@ -756,33 +675,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Age, ageResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Age", $"EditCharacterAge:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -792,9 +691,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage6 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage6.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Height:
@@ -814,33 +711,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Height, heightResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Height", $"EditCharacterHeight:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -850,9 +727,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage7 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage7.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Weight:
@@ -872,33 +747,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Weight, weightResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Weight", $"EditCharacterWeight:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -908,9 +763,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage8 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage8.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Orientation:
@@ -930,33 +783,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Orientation, orientationResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Orientation", $"EditCharacterOrientation:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -966,9 +799,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage9 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage9.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.Description:
@@ -988,33 +819,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.Description, descriptionResult.Value.Content).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Description", $"EditCharacterDescription:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -1024,9 +835,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage10 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage10.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.AvatarURL:
@@ -1041,33 +850,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.AvatarURL, avatarResult.Value.Attachments.First().Url).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Avatar", $"EditCharacterAvatar:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -1077,9 +866,7 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage11 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage11.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
         case CharacterDataType.ReferenceURL:
@@ -1094,33 +881,13 @@ namespace SnowyBot.Handlers
             await characters.EditCharacter(ulong.Parse(data[1]), $"{data[1]}:{data[2]}", CharacterDataType.ReferenceURL, referenceResult.Value.Attachments.First().Url).ConfigureAwait(false);
             Character character = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
-            ComponentBuilder builder = new ComponentBuilder();
+            ComponentBuilder builder = new();
             builder.WithButton("Reference", $"EditCharacterReference:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Primary);
             builder.WithButton("Back", $"EditCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
 
-            EmbedBuilder eBuilder = new EmbedBuilder();
-            eBuilder.WithAuthor($"{component.User.Username}#{component.User.Discriminator}", component.User.GetAvatarUrl(ImageFormat.Gif));
-            eBuilder.WithThumbnailUrl(character.AvatarURL);
-            eBuilder.WithTitle(character.Name);
-            eBuilder.WithDescription(character.Description);
-            eBuilder.AddField("Prefix", character.Prefix, true);
-            eBuilder.AddField("Gender", character.Gender, true);
-            eBuilder.AddField("Sex", character.Sex, true);
-            eBuilder.AddField("Species", character.Species, true);
-            eBuilder.AddField("Age", character.Age + " years", true);
-            eBuilder.AddField("Height", character.Height, true);
-            eBuilder.AddField("Weight", character.Weight, true);
-            eBuilder.AddField("Orientation", character.Orientation, true);
-            eBuilder.AddField("Created", character.CreationDate, true);
-            if (character.ReferenceURL != string.Empty && character.ReferenceURL != null && character.ReferenceURL != "X")
-              eBuilder.WithImageUrl(character.ReferenceURL);
-            eBuilder.WithCurrentTimestamp();
-            eBuilder.WithColor(new Color(0xcc70ff));
-            eBuilder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
-
-            await component.Message.ModifyAsync(async (MessageProperties properties) =>
+            await component.Message.ModifyAsync((MessageProperties properties) =>
             {
-              properties.Embeds = new Embed[1] { eBuilder.Build() };
+              properties.Embeds = new Embed[1] { CreateCharEmbed(character) };
               properties.Components = builder.Build();
             }).ConfigureAwait(false);
 
@@ -1130,11 +897,15 @@ namespace SnowyBot.Handlers
           }
           else
           {
-            RestUserMessage timeoutMessage12 = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
-            await Task.Delay(5000).ConfigureAwait(false);
-            await timeoutMessage12.DeleteAsync().ConfigureAwait(false);
+            timeOut = true;
           }
           break;
+      }
+      if (timeOut)
+      {
+        RestUserMessage t = await component.Message.Channel.SendMessageAsync("TImed out.").ConfigureAwait(false);
+        await Task.Delay(5000).ConfigureAwait(false);
+        await t.DeleteAsync().ConfigureAwait(false);
       }
     }
     private async Task HandleReactiveRoles(SocketMessageComponent component, string[] data)
@@ -1155,7 +926,7 @@ namespace SnowyBot.Handlers
 
       ulong role = 0;
       RestUserMessage m1 = await component.Channel.SendMessageAsync($"Send the role to {(data[0] == "ReactiveRolesAdd" ? "link to" : "unlink from")} the message.").ConfigureAwait(false);
-      var r1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == userID) && (x.Channel.Id == component.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+      InteractivityResult<SocketMessage> r1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == userID) && (x.Channel.Id == component.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
       if (r1.IsSuccess)
       {
         if (!TryParseRole(r1.Value.Content, out ulong roleID))
@@ -1235,6 +1006,27 @@ namespace SnowyBot.Handlers
           await guilds.RemoveReactiveRole(guildID, channelID, messageID, role, emoji).ConfigureAwait(false);
           await Task.Delay(5000).ConfigureAwait(false);
           await m8.DeleteAsync().ConfigureAwait(false);
+          break;
+      }
+    }
+    private async Task HandlePaginators(SocketMessageComponent component, string[] data)
+    {
+      bool found = DiscordService.paginators.TryGetValue(component.Message.Id, out (Paginator paginator, int timer) value);
+      if (!found)
+        return;
+      switch(data[0])
+      {
+        case "NextPage":
+          await value.paginator.NextPage().ConfigureAwait(false);
+          break;
+        case "PreviousPage":
+          await value.paginator.PreviousPage().ConfigureAwait(false);
+          break;
+        case "NextPageThree":
+          await value.paginator.Forward3Pages().ConfigureAwait(false);
+          break;
+        case "PreviousPageThree":
+          await value.paginator.Backward3Pages().ConfigureAwait(false);
           break;
       }
     }

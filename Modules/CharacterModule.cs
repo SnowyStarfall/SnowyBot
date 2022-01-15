@@ -4,9 +4,12 @@ using Discord.WebSocket;
 using SnowyBot.Database;
 using SnowyBot.Handlers;
 using SnowyBot.Services;
+using SnowyBot.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static SnowyBot.SnowyBotUtils;
 
 namespace SnowyBot.Modules
 {
@@ -270,7 +273,7 @@ namespace SnowyBot.Modules
         return;
       }
 
-      EmbedBuilder builder = new EmbedBuilder();
+      EmbedBuilder builder = new();
       builder.WithAuthor($"{Context.User.Username}#{Context.User.Discriminator}", Context.User.GetAvatarUrl());
       builder.WithThumbnailUrl(character.AvatarURL);
       builder.WithTitle(character.Name);
@@ -319,6 +322,55 @@ namespace SnowyBot.Modules
         await Context.Channel.SendMessageAsync("Timed out. Cancelling...").ConfigureAwait(false);
         return;
       }
+    }
+    [Command("chl")]
+    [Alias(new string[] { "character list", "char list" })]
+    public async Task ListCharacters()
+    {
+      List<Character> chars = await characters.ListCharacters(Context.User.Id).ConfigureAwait(false);
+      if (chars == null)
+      {
+        await Context.Channel.SendMessageAsync("No characters found.").ConfigureAwait(false);
+        return;
+      }
+
+      chars.Sort((x, y) => string.Compare(x.Name, y.Name));
+      List<Embed> embeds = new();
+      int embedsNeeded = chars.Count > 10 ? (chars.Count / 10) + 1 : 1;
+      int embedNum = 0;
+      for (int i = 0; i < embedsNeeded; i++)
+      {
+        EmbedBuilder builder = new();
+        builder.WithTitle($"{SnowyLeftLine}{SnowyLine}{SnowyRightLine} Results {SnowyLeftLine}{SnowyLine}{SnowyRightLine}");
+        builder.WithColor(new Color(0xcc70ff));
+        builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
+        builder.WithFooter($"Bot made by SnowyStarfall - Snowy#8364", DiscordService.Snowy.GetAvatarUrl(ImageFormat.Png));
+        for (int k = 0; k < 10; k++)
+        {
+          int index1 = (embedNum * 10) + k;
+          if (index1 == chars.Count)
+            break;
+          Character chara = chars.ElementAt(index1);
+          string emojis = StringToNumbers(index1 + 1) ?? NumToDarkEmoji(index1 + 1);
+          bool flag = StringToNumbers(index1 + 1) != null;
+          builder.AddField($"{emojis} {SnowySmallButton} {chara.Name}", $"**Prefix:** {chara.Prefix}{SnowySmallButton}**ID:** {chara.CharacterID.Remove(0, chara.CharacterID.IndexOf(':') + 1)}", false);
+        }
+        embeds.Add(builder.Build());
+        embedNum++;
+      }
+      string[] c = new[] { $"PreviousPageThree:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"PreviousPage:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"NextPage:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}", $"NextPageThree:{Context.User.Id}:{Context.Guild.Id}:{Context.Channel.Id}" };
+
+      if (embedsNeeded > 1)
+      {
+        ComponentBuilder cBuilder = new();
+        cBuilder.WithButton(null, c[2], ButtonStyle.Secondary, Emote.Parse(SnowyPlay));
+        cBuilder.WithButton(null, c[3], ButtonStyle.Secondary, Emote.Parse(SnowyFastForward));
+        IUserMessage message = await Context.Channel.SendMessageAsync(null, false, embeds.ElementAt(0), null, null, null, cBuilder.Build()).ConfigureAwait(false);
+        Paginator page = new(embeds, message, c);
+        DiscordService.paginators.TryAdd(message.Id, (page, 300));
+        return;
+      }
+      await Context.Channel.SendMessageAsync(null, false, embeds.ElementAt(0)).ConfigureAwait(false);
     }
   }
 }
