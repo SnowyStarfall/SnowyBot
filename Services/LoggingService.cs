@@ -50,6 +50,7 @@ namespace SnowyBot.Services
         "bot" => "RBOT",
         "rest" => "REST",
         "timer" => "TIMR",
+        "resume" => "RSUM",
         _ => src
       };
     }

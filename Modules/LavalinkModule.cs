@@ -17,6 +17,7 @@ using SnowyBot.Services;
 using SnowyBot.Database;
 using static SnowyBot.SnowyBotUtils;
 using SnowyBot.Utilities;
+using Victoria.Filters;
 
 namespace SnowyBot.Modules
 {
@@ -73,7 +74,7 @@ namespace SnowyBot.Modules
           DiscordService.lavaData.TryAdd(tempPlayer, (Context.Guild, 0, 300, null));
       }
 
-      bool execute = await CheckUserVoice().ConfigureAwait(false);
+      bool execute = await CheckUserVoice().ConfigureAwait(false) && query != null && query != string.Empty;
       if (!execute)
         return;
 
@@ -86,7 +87,7 @@ namespace SnowyBot.Modules
         startTime = TimeSpan.FromSeconds(int.Parse(time));
       }
 
-      List<PlaylistVideo> videos = PlaylistId.TryParse(query) != null ? await DiscordService.playlists.GetPlaylistResults(query).ConfigureAwait(false) : null;
+      List<PlaylistVideo> videos = PlaylistId.TryParse(query) != null ? await DiscordService.youTube.Playlists.GetVideosAsync(PlaylistId.Parse(query)).ToListAsync().ConfigureAwait(false) : null;
       List<LavaTrack> tracks = new();
       LavaPlayer player = lavaNode.GetPlayer(Context.Guild);
       SocketGuildUser user = Context.User as SocketGuildUser;
@@ -108,7 +109,7 @@ namespace SnowyBot.Modules
 
         if (search.Status == SearchStatus.NoMatches || search.Tracks.Count == 0)
         {
-          IUserMessage m1 = await Context.Channel.SendMessageAsync($"{SnowyError} {SnowySmallButton} **No results for:**\n{query}").ConfigureAwait(false);
+          IUserMessage m1 = await Context.Channel.SendMessageAsync($"{SnowyError} {SnowySmallButton} **No results for:**\n{query}. It may be unlisted or private.").ConfigureAwait(false);
           if (guild.DeleteMusic)
           {
             await Task.Delay(5000).ConfigureAwait(false);
@@ -164,12 +165,22 @@ namespace SnowyBot.Modules
         if (videos != null)
         {
           bool playFirst = false;
+          int count = 0;
+          double totalTime = 0;
           for (int i = 0; i < videos.Count; i++)
           {
+            DateTime before = DateTime.Now;
             SearchResponse response = await lavaNode.SearchYouTubeAsync(videos[i].Url).ConfigureAwait(false);
+            DateTime after = DateTime.Now;
+            double executionTime = (after - before).TotalMilliseconds;
+            await LoggingService.LogAsync("timer", LogSeverity.Info, "Playlist response took " + executionTime + "ms").ConfigureAwait(false);
             LavaTrack track = response.Tracks.FirstOrDefault();
             if (playFirst && track != null)
+            {
+              count++;
+              totalTime += executionTime;
               player.Queue.Enqueue(track);
+            }
             if (!playFirst)
             {
               playFirst = true;
@@ -188,6 +199,7 @@ namespace SnowyBot.Modules
             await Task.Delay(5000).ConfigureAwait(false);
             await m6.DeleteAsync().ConfigureAwait(false);
           }
+          await LoggingService.LogAsync("timer", LogSeverity.Info, "Playlist request took " + totalTime / count + "ms on average").ConfigureAwait(false);
         }
         else
         {
@@ -336,6 +348,13 @@ namespace SnowyBot.Modules
           string emojis = StringToNumbers(index1 + 1) ?? NumToDarkEmoji(index1 + 1);
           builder.AddField($"{emojis} {SnowySmallButton} {track.Title}", track.Url, false);
         }
+        TimeSpan timeSpan = TimeSpan.Zero;
+        foreach (LavaTrack track2 in player.Queue)
+          timeSpan += track2.Duration;
+        timeSpan += player.Track.Duration - player.Track.Position;
+        string t = timeSpan.ToString();
+        t = t.Remove(t.IndexOf('.'), t.Length - t.IndexOf('.'));
+        builder.AddField(SnowyBlank, $"**Queue Duration: {t} left!**");
         embeds.Add(builder.Build());
         embedNum++;
       }
@@ -944,6 +963,66 @@ namespace SnowyBot.Modules
         await Context.Channel.SendMessageAsync(s).ConfigureAwait(false);
       else
         await Context.Channel.SendMessageAsync("No results.");
+    }
+    [Command("Equalize")]
+    [Alias(new[] { "EQ" })]
+    public async Task Equalize([Remainder] string eq)
+    {
+      bool execute = await CheckBotVoice().ConfigureAwait(false) && await CheckUserVoice().ConfigureAwait(false);
+      if (!execute)
+        return;
+
+      LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
+
+      if ((player.PlayerState != PlayerState.Playing && player.PlayerState != PlayerState.Paused))
+      {
+        await Context.Channel.SendMessageAsync("I must be playing a track to apply an EQ.").ConfigureAwait(false);
+        return;
+      }
+      switch (eq.ToLower())
+      {
+        case string s when s == "bassboost" || s == "bb":
+          await player.ApplyFiltersAsync(new List<IFilter>(), 1, DiscordService.bassBoostEQ);
+          await Context.Channel.SendMessageAsync("Protect your ears!").ConfigureAwait(false);
+          return;
+        case string s when s == "normal" || s == "default":
+          await player.ApplyFiltersAsync(new List<IFilter>(), 1, DiscordService.normalEQ);
+          await Context.Channel.SendMessageAsync("Returning to normal.").ConfigureAwait(false);
+          return;
+      }
+      await Context.Channel.SendMessageAsync("I don't recognize that equalizer. Use `!help eq` for info on equalizers.").ConfigureAwait(false);
+    }
+    [Command("Filter")]
+    public async Task Filter([Remainder] string filter)
+    {
+      bool execute = await CheckBotVoice().ConfigureAwait(false) && await CheckUserVoice().ConfigureAwait(false);
+      if (!execute)
+        return;
+
+      LavaPlayer player = lavaNode.HasPlayer(Context.Guild) ? lavaNode.GetPlayer(Context.Guild) : null;
+
+      if ((player.PlayerState != PlayerState.Playing && player.PlayerState != PlayerState.Paused))
+      {
+        await Context.Channel.SendMessageAsync("I must be playing a track to apply a filter.").ConfigureAwait(false);
+        return;
+      }
+      switch (filter.ToLower())
+      {
+        case string s when s == "vibrato" || s == "vibrate":
+          VibratoFilter vibrato = new();
+          vibrato.Frequency = 10;
+          vibrato.Depth = 1;
+          if (player.Equalizer == DiscordService.bassBoostEQ)
+          {
+            await player.ApplyFiltersAsync(new List<IFilter>(), 1, DiscordService.normalEQ);
+            await player.ApplyFilterAsync(vibrato, 1, DiscordService.bassBoostEQ);
+          }
+          else
+            await player.ApplyFilterAsync(vibrato, 1, DiscordService.bassBoostEQ);
+          await Context.Channel.SendMessageAsync("Protect your ears!").ConfigureAwait(false);
+          return;
+      }
+      await Context.Channel.SendMessageAsync("I don't recognize that filter. Use `!help filter` for info on filters.").ConfigureAwait(false);
     }
     public async Task TrackEnded(TrackEndedEventArgs args)
     {

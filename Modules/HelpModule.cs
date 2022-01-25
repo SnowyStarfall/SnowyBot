@@ -24,7 +24,7 @@ namespace SnowyBot.Modules
         builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
         builder.WithTitle("SnowyBot Commands!");
         //builder.WithDescription("Use `!help detailed` to list all commands and their use!");
-        builder.AddField("Music", "join, play, list, pause, resume, playing, seek, jump, loop, qremove, qclear, shuffle, volume, lyrics, artwork, stop, leave", false);
+        builder.AddField("Music", "join, play, list, pause, resume, playing, seek, jump, loop, qremove, qclear, shuffle, volume, filter, eq, lyrics, artwork, stop, leave", false);
         builder.AddField("Fun", "question, 8ball, a, info, ratewaifu, jumbo, awoo, snort", false);
         builder.AddField("Points", "leaderboard, points", false);
         builder.AddField("Character", "char add, char view, char delete", false);
@@ -36,23 +36,6 @@ namespace SnowyBot.Modules
         await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
         return;
       }
-      //if (string.Equals(command, "detailed", System.StringComparison.OrdinalIgnoreCase))
-      //{
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.AddField("Join", "Makes me join the voice chat.\n- !join", true);
-      //  //builder.WithCurrentTimestamp();
-      //  //builder.WithColor(new Color(0xcc70ff));
-      //  //builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
-
-      //  await Context.Channel.SendMessageAsync("Not implemented yet.").ConfigureAwait(false);
-      //  return;
-      //}
 
       builder = new EmbedBuilder();
       builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
@@ -113,6 +96,14 @@ namespace SnowyBot.Modules
         case "volume":
           builder.WithTitle("Volume");
           builder.WithDescription("Changes the volume of the player.\n- !volume <1-150>");
+          break;
+        case "filter":
+          builder.WithTitle("Filter");
+          builder.WithDescription("Applies a filter to the player.\n- !filter vibrato");
+          break;
+        case "eq":
+          builder.WithTitle("EQ");
+          builder.WithDescription("Applies an equalizer to the player.\n- !eq <normal | default>\n- !eq <bassboost | bb>");
           break;
         case "lyrics":
           builder.WithTitle("Lyrics");

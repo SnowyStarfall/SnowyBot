@@ -23,6 +23,16 @@ namespace SnowyBot.Modules
     [Alias(new string[] { "character add", "character create", "char add", "char create" })]
     public async Task AddCharacter()
     {
+      //bool found = DiscordService.activeCommands.TryGetValue(Context.User.Id, out string commands);
+      //if(found)
+      //{
+      //  if (commands.Contains("AddCharacter"))
+      //  {
+      //    await Context.Channel.SendMessageAsync("You're already using this command.")
+      //  }
+      //}
+      //DiscordService.activeCommands.TryAdd(Context.User.Id, )
+
       string prefix = null;
       string name = null;
       string gender = null;
@@ -36,154 +46,176 @@ namespace SnowyBot.Modules
       string avatarURL = null;
       string referenceURL = null;
 
-      await Context.Channel.SendMessageAsync("This feature is a work in progress. Please report any bugs to <@402246856752627713>.\n" +
-                                             "Please be sure to enter responses within **5 minutes** or your progress will be lost.\n" +
-                                             "**These responses can be edited later.** If you can't finish a response within **5 minutes**, don't be afraid to enter a placeholder.").ConfigureAwait(false);
+      await Context.Channel.SendMessageAsync("Please be sure to enter responses within **5 minutes**.\n" +
+                                             "**These responses can be edited later.**").ConfigureAwait(false);
+      int error = 0;
 
-      await Context.Channel.SendMessageAsync("Please enter a prefix.").ConfigureAwait(false);
-
-      var prefixResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
-      if (prefixResult.IsSuccess)
+      while (error < 3 && prefix == null)
       {
-        prefix = prefixResult.Value.Content;
+        await Context.Channel.SendMessageAsync("Please enter a prefix.").ConfigureAwait(false);
+
+        var prefixResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
+
+        if (prefixResult.IsSuccess)
+        {
+          if (prefixResult.Value.Content.Length > 8)
+          {
+            error++;
+            await Context.Channel.SendMessageAsync("Prefix too large!");
+          }
+          else if (await characters.CheckPrefixExists(Context.User.Id, prefixResult.Value.Content).ConfigureAwait(false) != null)
+          {
+            error++;
+            Character chara = await characters.CheckPrefixExists(Context.User.Id, prefixResult.Value.Content).ConfigureAwait(false);
+            await Context.Channel.SendMessageAsync($"Prefix already exists for {chara.Name}.");
+          }
+          else
+          {
+            error = 0;
+            prefix = prefixResult.Value.Content;
+          }
+        }
+        else
+        {
+          await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+          return;
+        }
       }
-      else
+      if (error >= 3)
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Too many invalid responses.").ConfigureAwait(false);
         return;
       }
 
-      await Context.Channel.SendMessageAsync("Please enter a name.").ConfigureAwait(false);
-
-      var nameResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
-      if (nameResult.IsSuccess)
+      while (error < 3 && name == null)
       {
-        name = nameResult.Value.Content;
+        await Context.Channel.SendMessageAsync("Please enter a name.").ConfigureAwait(false);
+
+        var nameResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
+
+        if (nameResult.IsSuccess)
+        {
+          if (int.TryParse(nameResult.Value.Content, out _))
+          {
+            error++;
+            await Context.Channel.SendMessageAsync("Name cannot be a number.").ConfigureAwait(false);
+          }
+          else
+          {
+            error = 0;
+            name = nameResult.Value.Content;
+          }
+        }
+        else
+        {
+          await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+          return;
+        }
       }
-      else
+      if (error >= 3)
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
+        await Context.Channel.SendMessageAsync("Too many invalid responses.").ConfigureAwait(false);
         return;
       }
 
       await Context.Channel.SendMessageAsync("Please enter a gender.").ConfigureAwait(false);
-
       var genderResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (genderResult.IsSuccess)
       {
         gender = genderResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        gender = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter a sex.").ConfigureAwait(false);
-
       var sexResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (sexResult.IsSuccess)
       {
         sex = sexResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        sex = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter a species.").ConfigureAwait(false);
-
       var speciesResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (speciesResult.IsSuccess)
       {
         species = speciesResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        species = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter an age.").ConfigureAwait(false);
-
       var ageResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (ageResult.IsSuccess)
       {
         age = ageResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        age = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter a height.").ConfigureAwait(false);
-
       var heightResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (heightResult.IsSuccess)
       {
         height = heightResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        height = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter a weight.").ConfigureAwait(false);
-
       var weightResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (weightResult.IsSuccess)
       {
         weight = weightResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        weight = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter an orientation.").ConfigureAwait(false);
-
       var orientationResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (orientationResult.IsSuccess)
       {
         orientation = orientationResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        orientation = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please enter a description. This can be edited later.").ConfigureAwait(false);
-
       var descriptionResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
       if (descriptionResult.IsSuccess)
       {
         description = descriptionResult.Value.Content;
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        description = "Skipped";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please send an avatar picture, or enter \"Skip\" to skip.").ConfigureAwait(false);
-
-      var avatarResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
+      var avatarResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0 || string.Equals(x.Content, "skip", StringComparison.OrdinalIgnoreCase)), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
       if (avatarResult.IsSuccess)
       {
         if (string.Equals(avatarResult.Value.Content, "skip", StringComparison.OrdinalIgnoreCase))
@@ -193,14 +225,12 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        avatarURL = "";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Please send a reference picture, or enter \"Skip\" to skip.").ConfigureAwait(false);
-
-      var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0 || x.Content.ToLower() == "skip"), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
-
+      var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Attachments.Count > 0 || string.Equals(x.Content, "skip", StringComparison.OrdinalIgnoreCase)), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
       if (referenceResult.IsSuccess)
       {
         if (string.Equals(referenceResult.Value.Content, "skip", StringComparison.OrdinalIgnoreCase))
@@ -210,8 +240,8 @@ namespace SnowyBot.Modules
       }
       else
       {
-        await Context.Channel.SendMessageAsync("Timed out.").ConfigureAwait(false);
-        return;
+        referenceURL = "";
+        await Context.Channel.SendMessageAsync("Skipping.").ConfigureAwait(false);
       }
 
       await Context.Channel.SendMessageAsync("Character added!").ConfigureAwait(false);
@@ -220,9 +250,11 @@ namespace SnowyBot.Modules
     }
     [Command("chv")]
     [Alias(new string[] { "character view", "char view" })]
-    public async Task ViewCharacter([Remainder] string name)
+    public async Task ViewCharacter([Remainder] string input)
     {
-      Character character = await characters.ViewCharacter(Context.User.Id, name).ConfigureAwait(false);
+      bool isID = int.TryParse(input, out int idSearch);
+
+      Character character = !isID ? await characters.ViewCharacterByName(Context.User.Id, input).ConfigureAwait(false) : await characters.ViewCharacterByID(Context.User.Id, input).ConfigureAwait(false);
 
       if (character == null)
       {
@@ -265,7 +297,7 @@ namespace SnowyBot.Modules
     {
       string[] result = name.Split(" ");
 
-      Character character = await characters.ViewCharacter(Context.User.Id, result[0]).ConfigureAwait(false);
+      Character character = await characters.ViewCharacterByName(Context.User.Id, result[0]).ConfigureAwait(false);
 
       if (character == null)
       {

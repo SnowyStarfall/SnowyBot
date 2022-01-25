@@ -192,5 +192,29 @@ namespace SnowyBot.Modules
 
       await Context.Channel.SendMessageAsync(awoo).ConfigureAwait(false);
     }
+    [Command("Roll")]
+    public async Task Roll([Remainder] string dice)
+    {
+      string[] values = dice.ToLower().Replace("-", "").Split('d');
+      bool flag1 = int.TryParse(values[0], out int amount);
+      bool flag2 = int.TryParse(values[1], out int sides);
+      if (!flag1 || !flag2)
+      {
+        await Context.Channel.SendMessageAsync("Incorrect format.").ConfigureAwait(false);
+        return;
+      }
+      string result = "";
+      int value = 0;
+      for (int i = 0; i < amount; i++)
+      {
+        int num = random.Next(1, sides + 1);
+        result += num + ", ";
+        value += num;
+      }
+      result = result.Replace(" 1, ", " **1**,");
+      result = result.Replace($" {sides}, ", $" **{sides}**, ");
+      result = result.Remove(result.Length - 2, 2);
+      await Context.Channel.SendMessageAsync($"{Context.User.Mention}  :game_die:\n**Result**: {dice.Replace("-", "").ToLower()} ({result})\n**Total**: {value}");
+    }
   }
 }

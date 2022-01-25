@@ -65,7 +65,7 @@ namespace SnowyBot.Handlers
       }
       int argPos = 0;
 
-      Character character = await characters.HasCharPrefix(context.User.Id, context.Message.Content).ConfigureAwait(false);
+      (Character character, string charPrefix) = await characters.HasCharPrefix(context.User.Id, context.Message.Content).ConfigureAwait(false);
 
       if (character != null)
       {
@@ -86,7 +86,7 @@ namespace SnowyBot.Handlers
           }
           if (url == null) return;
           DiscordWebhookClient webClient = new(url);
-          ulong messageID = await webClient.SendMessageAsync(context.Message.Content.Remove(0, array[0].Length + 1), false, null, character.Name, character.AvatarURL).ConfigureAwait(false);
+          ulong messageID = await webClient.SendMessageAsync(context.Message.Content.Remove(0, charPrefix.Length) , false, null, character.Name, character.AvatarURL).ConfigureAwait(false);
           IUserMessage message1 = await context.Channel.GetMessageAsync(messageID).ConfigureAwait(false) as IUserMessage;
           DiscordService.messageData.TryAdd(messageID, (message1, 600, true, context.User.Id));
         }
@@ -231,40 +231,9 @@ namespace SnowyBot.Handlers
         return;
       switch (data[0])
       {
-        case "EditCharacterBack":
-          Character character = await characters.ViewCharacterByID(ulong.Parse(data[0]), data[1]).ConfigureAwait(false);
-
-          string key = null;
-
-          for (int i = 0; i < 10; i++)
-            key += random.Next(0, 10);
-
-          await component.Channel.SendMessageAsync($"Are you sure you want to delete this character? Please type {key} to confirm.").ConfigureAwait(false);
-
-          var keyResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == component.User.Id) && (x.Channel.Id == component.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
-
-          if (keyResult.IsSuccess)
-          {
-            if (keyResult.Value.Content == key)
-            {
-              await characters.DeleteCharacter(character).ConfigureAwait(false);
-              RestUserMessage m = await component.Channel.SendMessageAsync("Character deleted. ").ConfigureAwait(false);
-              await Task.Delay(5000).ConfigureAwait(false);
-              await m.DeleteAsync().ConfigureAwait(false);
-            }
-            else
-            {
-              RestUserMessage m = await component.Channel.SendMessageAsync("Incorrect key. Cancelling...").ConfigureAwait(false);
-              return;
-            }
-          }
-          else
-          {
-            await component.Channel.SendMessageAsync("Timed out. Cancelling...").ConfigureAwait(false);
-            return;
-          }
+        case string s when s.Contains("Character"):
           break;
-        case "DeleteCharacter":
+        case "EditCharacterBack":
           await component.Message.ModifyAsync((MessageProperties properties) =>
           {
             ComponentBuilder builder = new();
@@ -272,6 +241,9 @@ namespace SnowyBot.Handlers
             builder.WithButton("Delete", $"DeleteCharacter:{data[1]}:{data[2]}:{data[3]}", ButtonStyle.Danger);
             properties.Components = builder.Build();
           }).ConfigureAwait(false);
+          break;
+        case "DeleteCharacter":
+          HandleCharacterEdits(component, CharacterDataType.Delete, data).ContinueWith(t => Console.WriteLine(t.Exception), TaskContinuationOptions.OnlyOnFaulted).ConfigureAwait(false);
           break;
         case "EditCharacter":
           await component.Message.ModifyAsync((MessageProperties properties) =>
@@ -478,6 +450,40 @@ namespace SnowyBot.Handlers
 
       switch (type)
       {
+        case CharacterDataType.Delete:
+          bool parsed = ulong.TryParse(data[1], out ulong value);
+          Character character2 = await characters.ViewCharacterByID(value, data[2]).ConfigureAwait(false);
+
+          string key = null;
+
+          for (int i = 0; i < 5; i++)
+            key += random.Next(0, 10);
+
+          await component.Channel.SendMessageAsync($"Are you sure you want to delete this character? Please type {key} to confirm.").ConfigureAwait(false);
+
+          var keyResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == value) && (x.Channel.Id == component.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+
+          if (keyResult.IsSuccess)
+          {
+            if (keyResult.Value.Content == key)
+            {
+              await characters.DeleteCharacter(character2).ConfigureAwait(false);
+              RestUserMessage m = await component.Channel.SendMessageAsync("Character deleted. ").ConfigureAwait(false);
+              await Task.Delay(5000).ConfigureAwait(false);
+              await m.DeleteAsync().ConfigureAwait(false);
+            }
+            else
+            {
+              RestUserMessage m = await component.Channel.SendMessageAsync("Incorrect key. Cancelling...").ConfigureAwait(false);
+              return;
+            }
+          }
+          else
+          {
+            await component.Channel.SendMessageAsync("Timed out. Cancelling...").ConfigureAwait(false);
+            return;
+          }
+          break;
         case CharacterDataType.Prefix:
           RestUserMessage infoMessage1 = await component.Message.Channel.SendMessageAsync("Please enter a new prefix.").ConfigureAwait(false);
 
@@ -872,7 +878,7 @@ namespace SnowyBot.Handlers
         case CharacterDataType.ReferenceURL:
           RestUserMessage infoMessage12 = await component.Message.Channel.SendMessageAsync("Please send a new reference.").ConfigureAwait(false);
 
-          var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == ulong.Parse(data[1])) && (x.Channel.Id == component.Message.Channel.Id) && (x.Attachments.First() != null), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+          var referenceResult = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == ulong.Parse(data[1])) && (x.Channel.Id == component.Message.Channel.Id) && (x.Attachments.Count > 0) && (x.Attachments.First() != null), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
           if (referenceResult.IsSuccess)
           {

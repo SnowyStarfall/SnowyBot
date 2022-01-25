@@ -11,14 +11,11 @@ namespace SnowyBot.Database
   public class Characters
   {
     private readonly CharacterContext context;
-    public Characters(CharacterContext _context)
-    {
-      context = _context;
-    }
+    public Characters(CharacterContext _context) => context = _context;
 
     public async Task AddCharacter(ulong userID, DateTime creationDate, string prefix, string name, string gender, string sex, string species, string age, string height, string weight, string orientation, string description, string avatarURL, string referenceURL)
     {
-      context.Add(new Character { UserID = userID, CharacterID = $"{userID}:{await HighestCharacterID(userID).ConfigureAwait(false) + 1}", CreationDate = creationDate.ToString(), Prefix = prefix, Name = name, Gender = gender, Sex = sex, Species = species, Age = age, Height = height, Weight = weight, Orientation = orientation, Description = description, AvatarURL = avatarURL, ReferenceURL = referenceURL });
+      context.Add(new Character { UserID = userID, CharacterID = $"{userID}:{await CheckHighestID(userID).ConfigureAwait(false) + 1}", CreationDate = creationDate.ToString(), Prefix = prefix, Name = name, Gender = gender, Sex = sex, Species = species, Age = age, Height = height, Weight = weight, Orientation = orientation, Description = description, AvatarURL = avatarURL, ReferenceURL = referenceURL });
       await context.SaveChangesAsync().ConfigureAwait(false);
     }
     public async Task DeleteCharacter(Character character)
@@ -79,29 +76,20 @@ namespace SnowyBot.Database
       }
       await context.SaveChangesAsync().ConfigureAwait(false);
     }
-    public async Task<Character> HasCharPrefix(ulong userID, string message)
+    public async Task<(Character, string)> HasCharPrefix(ulong userID, string message)
     {
-      return await context.Characters
+      Character chara = await context.Characters
                    .AsAsyncEnumerable()
                    .Where(x => x.UserID == userID && message.StartsWith(x.Prefix))
                    .FirstOrDefaultAsync()
                    .ConfigureAwait(false);
+      return (chara, chara?.Prefix);
     }
-    public async Task<ulong> HighestCharacterID(ulong userID)
+    public async Task<Character> CheckPrefixExists(ulong userID, string prefix)
     {
-      ulong count = 0;
-      string[] characterID;
-      foreach (Character character in context.Characters)
-      {
-        characterID = character.CharacterID.Split(":");
-        if (character.UserID == userID && ulong.Parse(characterID[1]) > count)
-          count = ulong.Parse(characterID[1]);
-      }
-      if (count == 0)
-        return await Task.FromResult(0u).ConfigureAwait(false);
-      return await Task.FromResult(count).ConfigureAwait(false);
+      return await context.Characters.AsAsyncEnumerable().Where(x => x.UserID == userID && x.Prefix == prefix).FirstOrDefaultAsync();
     }
-    public async Task<Character> ViewCharacter(ulong userID, string name)
+    public async Task<Character> ViewCharacterByName(ulong userID, string name)
     {
       return await context.Characters
                    .AsAsyncEnumerable()
@@ -116,6 +104,20 @@ namespace SnowyBot.Database
                    .Where(x => x.UserID == userID && x.CharacterID == characterID)
                    .FirstOrDefaultAsync()
                    .ConfigureAwait(false);
+    }
+    public async Task<ulong> CheckHighestID(ulong userID)
+    {
+      ulong count = 0;
+      string[] characterID;
+      foreach (Character character in context.Characters)
+      {
+        characterID = character.CharacterID.Split(":");
+        if (character.UserID == userID && ulong.Parse(characterID[1]) > count)
+          count = ulong.Parse(characterID[1]);
+      }
+      if (count == 0)
+        return await Task.FromResult(0u).ConfigureAwait(false);
+      return await Task.FromResult(count).ConfigureAwait(false);
     }
     public async Task<List<Character>> ListCharacters(ulong userID)
     {

@@ -6,6 +6,7 @@ namespace SnowyBot.Structs
 {
   public enum CharacterDataType
   {
+    Delete = -1,
     Prefix = 0,
     Name = 1,
     Gender = 2,

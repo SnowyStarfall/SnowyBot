@@ -1,16 +1,16 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.Rest;
-using Discord.Webhook;
 using Discord.WebSocket;
 using SnowyBot.Database;
 using SnowyBot.Services;
-using System;
 using System.Collections.Generic;
+using SnowyBot.Structs;
 using System.Linq;
 using System.Threading.Tasks;
-using YoutubeExplode.Playlists;
+using Victoria;
 using static SnowyBot.SnowyBotUtils;
+using System;
 
 namespace SnowyBot.Modules
 {
@@ -18,10 +18,12 @@ namespace SnowyBot.Modules
   {
     public Guilds guilds;
     public GuildContext context;
-    public DevModule(Guilds _guilds, GuildContext _context)
+    public LavaNode lavaNode;
+    public DevModule(Guilds _guilds, GuildContext _context, LavaNode _lavaNode)
     {
       guilds = _guilds;
       context = _context;
+      lavaNode = _lavaNode;
     }
 
     [Command("User")]
@@ -38,7 +40,7 @@ namespace SnowyBot.Modules
       if (rest != null && rest.Activity != null)
         builder.WithDescription($"Activity:\nName - {rest.Activity.Name}\nType - {rest.Activity.Type}\nDetails - {rest.Activity.Details}");
       builder.AddField("Is Bot:", user.IsBot ? "Yes" : "No", true);
-      if(rest != null)
+      if (rest != null)
       {
         builder.AddField("Created At:", rest.CreatedAt.ToString(), true);
         builder.AddField("Rest Status:", rest.Status.ToString(), true);
@@ -58,13 +60,13 @@ namespace SnowyBot.Modules
     public async Task Update()
     {
       List<ITextChannel> channels = new();
-      foreach(Guild guild in context.Guilds)
+      foreach (Guild guild in context.Guilds)
       {
         SocketGuild g = await Context.Client.GetGuildAsync(guild.ID).ConfigureAwait(false) as SocketGuild;
-        if(g != null)
+        if (g != null)
         {
           ITextChannel c = g.GetChannel(guild.ChangelogID) as ITextChannel;
-          if(c != null)
+          if (c != null)
             channels.Add(c);
         }
       }
@@ -105,12 +107,38 @@ namespace SnowyBot.Modules
     public async Task Image([Remainder] string query)
     {
       IEnumerable<ImgurResult> results = await SearchAsync(query).ConfigureAwait(false);
-      if(results == null)
+      if (results == null)
       {
         await Context.Channel.SendMessageAsync("No results found.").ConfigureAwait(false);
         return;
       }
       await Context.Channel.SendMessageAsync(results.ToList().First().Url).ConfigureAwait(false);
+    }
+    [Command("SafeStop")]
+    [RequireOwner]
+    public async Task SafeStop()
+    {
+      if(Context.Channel != null)
+        await Context.Channel.SendMessageAsync("Safe stopping...");
+
+      LavaTable table = new();
+
+      foreach (LavaPlayer player in lavaNode.Players)
+      {
+        LavaData data = new();
+        data.Configure(player);
+        table.table.TryAdd(player.TextChannel.GuildId, data);
+      }
+
+      LavaTable.WriteToBinaryFile("C:/Users/Snowy/Documents/My Games/Terraria/ModLoader/Mod Sources/SnowyBotCSharp/Database/LavaNodeData.lava", table);
+    }
+    [Command("ReadData")]
+    [RequireOwner]
+    public async Task ReadData()
+    {
+      await Context.Channel.SendMessageAsync("Reading LavaPlayer data...");
+
+      LavaTable table = LavaTable.ReadFromBinaryFile<LavaTable>("C:/Users/Snowy/Documents/My Games/Terraria/ModLoader/Mod Sources/SnowyBotCSharp/Database/LavaNodeData.lava");
     }
   }
 }
