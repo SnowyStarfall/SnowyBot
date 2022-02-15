@@ -2,9 +2,7 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using SnowyBot.Services;
-using System.Text;
 using System.Threading.Tasks;
-using static SnowyBot.SnowyBotUtils;
 
 namespace SnowyBot.Modules
 {

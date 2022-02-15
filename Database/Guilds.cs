@@ -1,9 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.Rest;
-using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using SnowyBot.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

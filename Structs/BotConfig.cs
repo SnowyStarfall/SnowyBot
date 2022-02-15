@@ -1,7 +1,4 @@
-﻿using Discord;
-using System.Collections.Generic;
-
-namespace SnowyBot.Structs
+﻿namespace SnowyBot.Structs
 {
 	public class BotConfig
 	{

@@ -1,23 +1,22 @@
-﻿using System;
-using System.Linq;
-using System.Timers;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using SnowyBot.Database;
+using SnowyBot.Services;
+using SnowyBot.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Timers;
 using Victoria;
 using Victoria.Enums;
-using Victoria.Resolvers;
 using Victoria.EventArgs;
+using Victoria.Filters;
+using Victoria.Resolvers;
 using Victoria.Responses.Search;
 using YoutubeExplode.Playlists;
-using SnowyBot.Handlers;
-using SnowyBot.Services;
-using SnowyBot.Database;
 using static SnowyBot.SnowyBotUtils;
-using SnowyBot.Utilities;
-using Victoria.Filters;
 
 namespace SnowyBot.Modules
 {

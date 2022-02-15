@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
-using Discord.Rest;
-using System.Collections.Generic;
-using Discord;
 
 namespace SnowyBot.Database
 {

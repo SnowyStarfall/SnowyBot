@@ -4,7 +4,6 @@ using Discord.WebSocket;
 using SnowyBot.Database;
 using SnowyBot.Services;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SnowyBot.Modules

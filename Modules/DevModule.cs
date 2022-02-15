@@ -4,13 +4,13 @@ using Discord.Rest;
 using Discord.WebSocket;
 using SnowyBot.Database;
 using SnowyBot.Services;
-using System.Collections.Generic;
 using SnowyBot.Structs;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Victoria;
 using static SnowyBot.SnowyBotUtils;
-using System;
 
 namespace SnowyBot.Modules
 {

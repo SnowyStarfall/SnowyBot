@@ -2,10 +2,9 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using SnowyBot.Database;
-using SnowyBot.Handlers;
-using System.Threading.Tasks;
-using System;
 using SnowyBot.Services;
+using System;
+using System.Threading.Tasks;
 using static Discord.MentionUtils;
 
 namespace SnowyBot.Modules

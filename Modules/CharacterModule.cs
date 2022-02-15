@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using SnowyBot.Database;
-using SnowyBot.Handlers;
 using SnowyBot.Services;
 using SnowyBot.Utilities;
 using System;

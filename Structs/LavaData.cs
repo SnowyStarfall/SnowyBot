@@ -1,15 +1,11 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 using Victoria;
 using Victoria.Enums;
-using System.Text.Json;
 
 namespace SnowyBot.Structs
 {

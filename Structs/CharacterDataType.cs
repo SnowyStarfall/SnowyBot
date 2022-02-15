@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SnowyBot.Structs
+﻿namespace SnowyBot.Structs
 {
 	public enum CharacterDataType
 	{

@@ -1,10 +1,9 @@
-﻿using System;
+﻿using SnowyBot.Services;
+using SnowyBot.Structs;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using System.Timers;
-using SnowyBot.Services;
-using SnowyBot.Structs;
 using Victoria;
 
 namespace SnowyBot
