@@ -233,12 +233,19 @@ namespace SnowyBot.Modules
 		{
 			try { await Context.Message.DeleteAsync().ConfigureAwait(false); }
 			catch { }
-			await Context.Channel.SendMessageAsync($"*inflates {mention} making them big and around*").ConfigureAwait(false);
+			if (mention == DiscordService.Snowy.Mention)
+			{
+				await Context.Channel.SendMessageAsync($"*inflates {Context.Message.Author.Mention} making them big and round*").ConfigureAwait(false);
+				return;
+			}
+			await Context.Channel.SendMessageAsync($"*inflates {mention} making them big and round*").ConfigureAwait(false);
 		}
 		[Command("Scramble")]
 		public async Task Scramble([Remainder] string sentence = null)
 		{
-			if (Context.Message.ReferencedMessage != null)
+			if (sentence == null && Context.Message.ReferencedMessage?.Embeds?.Count > 0)
+				sentence = Context.Message.ReferencedMessage.Embeds.First().Description;
+			if (sentence == null && Context.Message.ReferencedMessage != null)
 				sentence = Context.Message.ReferencedMessage.Content;
 			if (sentence == null && Context.Message.ReferencedMessage == null)
 				return;
@@ -348,6 +355,12 @@ namespace SnowyBot.Modules
 			//{
 			//  Console.Write(ex);
 			//}
+		}
+		[Command("PotionSeller")]
+		[Alias(new[] { "StrongestPotions" })]
+		public async Task PotionSeller()
+		{
+			await Context.Channel.SendMessageAsync("https://www.youtube.com/watch?v=-6QifNVcxbA").ConfigureAwait(false);
 		}
 	}
 }

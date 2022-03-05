@@ -447,7 +447,7 @@ namespace SnowyBot.Handlers
 			{
 				case CharacterDataType.Delete:
 					bool parsed = ulong.TryParse(data[1], out ulong value);
-					Character character2 = await characters.ViewCharacterByID(value, data[2]).ConfigureAwait(false);
+					Character character2 = await characters.ViewCharacterByID(ulong.Parse(data[1]), $"{data[1]}:{data[2]}").ConfigureAwait(false);
 
 					string key = null;
 
