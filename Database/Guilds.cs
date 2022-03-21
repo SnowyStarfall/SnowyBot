@@ -179,6 +179,22 @@ namespace SnowyBot.Database
 			string[] split = guild.UserPoints[index1..index2].Replace("|", "").Split(";");
 			return ulong.Parse(split[1]);
 		}
+		public async Task<bool> DeleteGuildPoints(ulong id, ulong userID)
+		{
+			var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
+			if (guild == null)
+			{
+				context.Add(new Guild { ID = id, Prefix = "!", PointGain = "5;10" });
+				return false;
+			}
+			if (!guild.UserPoints.Contains(userID.ToString()))
+				return false;
+			int index1 = guild.UserPoints.IndexOf(userID.ToString());
+			int index2 = guild.UserPoints.IndexOf("|", index1);
+			guild.UserPoints = guild.UserPoints.Remove(index1, index2 - index1);
+			await context.SaveChangesAsync().ConfigureAwait(false);
+			return true;
+		}
 		public async Task SetGuildPointRange(ulong id, int min, int max)
 		{
 			var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);

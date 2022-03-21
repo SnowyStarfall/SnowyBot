@@ -49,5 +49,29 @@ namespace SnowyBot.Modules
 			ulong amount = await guilds.GetGuildPoints(Context.Guild.Id, Context.User.Id).ConfigureAwait(false);
 			await Context.Channel.SendMessageAsync("You have " + amount + " points.").ConfigureAwait(false);
 		}
+		[Command("Leaderboard Remove")]
+		[Alias(new[] { "lbr", "lb r", "lb remove" })]
+		[RequireUserPermission(GuildPermission.Administrator)]
+		public async Task LeaderboardRemove(string user)
+		{
+			if (MentionUtils.TryParseUser(user, out ulong ID))
+			{
+				bool complete = await guilds.DeleteGuildPoints(Context.Guild.Id, ID).ConfigureAwait(false);
+				if (!complete)
+					Context.Channel.SendMessageAsync("User does not exist on the leaderboard.");
+				else
+					Context.Channel.SendMessageAsync("User removed from the leaderboard.");
+				return;
+			}
+			if (ulong.TryParse(user, out ulong ID1))
+			{	
+				bool complete = await guilds.DeleteGuildPoints(Context.Guild.Id, ID1).ConfigureAwait(false);
+				if (!complete)
+					Context.Channel.SendMessageAsync("User does not exist on the leaderboard.");
+				else
+					Context.Channel.SendMessageAsync("User removed from the leaderboard.");
+				return;
+			}
+		}
 	}
 }

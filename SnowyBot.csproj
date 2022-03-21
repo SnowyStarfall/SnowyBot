@@ -23,19 +23,19 @@
     <PackageReference Include="Discord.Net.Labs.Rest" Version="3.6.1" />
     <PackageReference Include="Discord.Net.Labs.Webhook" Version="3.6.1" />
     <PackageReference Include="Discord.Net.Labs.WebSocket" Version="3.6.1" />
-    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.55.0.2449" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.1">
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.56.0.2630" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.1">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.1" />
-    <PackageReference Include="Victoria" Version="5.2.5" />
-    <PackageReference Include="YoutubeExplode" Version="6.0.7" />
+    <PackageReference Include="Victoria" Version="5.2.8" />
+    <PackageReference Include="YoutubeExplode" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>

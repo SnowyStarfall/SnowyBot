@@ -17,6 +17,48 @@ namespace SnowyBot.Modules
 		[Command("Config")]
 		public async Task Config()
 		{
+			//EmbedBuilder builder = new EmbedBuilder();
+			//builder.WithAuthor($"{Context.User.Username}#{Context.User.Discriminator}", Context.User.GetAvatarUrl());
+			//builder.WithTitle("Guild Config");
+			//builder.WithDescription("Pick an option:");
+			//builder.AddField("1. Prefix", "Manage the guild prefix.");
+			//builder.AddField("2. Music Posts", "Choose whether music posts will be deleted.");
+			//builder.AddField("3. Welcome", "Manage the welcome message.");
+			//builder.AddField("4. Goodbye", "Manage the goodbye message.");
+			//builder.AddField("5. Changelog", "Choose a channel for bot updates to be posted in.");
+			//builder.AddField("6. Roles", "Manage reactive roles.");
+			//builder.WithCurrentTimestamp();
+			//builder.WithColor(new Color(0xcc70ff));
+			//builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Png) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+
+			//IUserMessage m1 = await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
+
+			//var selectedOption = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty) && int.TryParse(x.Content, out int result) && result > 0 && result < 7, null, TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+
+			//m1.DeleteAsync();
+
+			//if (!selectedOption.IsSuccess)
+			//{
+			//	await Context.Channel.SendMessageAsync("Timed out or incorrect response.").ConfigureAwait(false);
+			//	return;
+			//}
+
+			//switch (int.Parse(selectedOption.Value.Content))
+			//{
+			//	case 1:
+			//		break;
+			//	case 2:
+			//		break;
+			//	case 3:
+			//		break;
+			//	case 4:
+			//		break;
+			//	case 5:
+			//		break;
+			//	case 6:
+			//		break;
+			//}
+
 			IUserMessage m = await Context.Channel.SendMessageAsync("Not yet implemented.").ConfigureAwait(false);
 			await Task.Delay(5000).ConfigureAwait(false);
 			await m.DeleteAsync().ConfigureAwait(false);
@@ -401,9 +443,6 @@ namespace SnowyBot.Modules
 					break;
 			}
 		}
-		//[Command("SetupReactChannels")]
-		//[RequireUserPermission(GuildPermission.Administrator)]
-
 		public async Task SetupRoles()
 		{
 			bool makePost = true;
@@ -532,5 +571,7 @@ namespace SnowyBot.Modules
 				return;
 			}
 		}
+		//[Command("SetupReactChannels")]
+		//[RequireUserPermission(GuildPermission.Administrator)]
 	}
 }
