@@ -136,7 +136,7 @@ namespace SnowyBot.Modules
 				{
 					foreach (PlaylistVideo video in videos)
 					{
-						SearchResponse response = await lavaNode.SearchYouTubeAsync(video.Url).ConfigureAwait(false);
+						SearchResponse response = await lavaNode.SearchYouTubeAsync(video.Title + " " + video.Author).ConfigureAwait(false);
 						LavaTrack track = response.Tracks.FirstOrDefault();
 						if (track != null)
 							player.Queue.Enqueue(track);
@@ -169,7 +169,7 @@ namespace SnowyBot.Modules
 					for (int i = 0; i < videos.Count; i++)
 					{
 						DateTime before = DateTime.Now;
-						SearchResponse response = await lavaNode.SearchYouTubeAsync(videos[i].Url).ConfigureAwait(false);
+						SearchResponse response = await lavaNode.SearchYouTubeAsync(videos[i].Title + " " + videos[i].Author).ConfigureAwait(false);
 						DateTime after = DateTime.Now;
 						double executionTime = (after - before).TotalMilliseconds;
 						await LoggingService.LogAsync("timer", LogSeverity.Info, "Playlist response took " + executionTime + "ms").ConfigureAwait(false);
