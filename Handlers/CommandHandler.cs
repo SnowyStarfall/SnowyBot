@@ -19,13 +19,13 @@ namespace SnowyBot.Handlers
 	public class CommandHandler
 	{
 		private static IServiceProvider provider;
-		private static DiscordSocketClient client;
+		private static DiscordShardedClient client;
 		private static CommandService commands;
 		private static Guilds guilds;
 		private static Characters characters;
 		private static readonly Random random = new();
 		public int playerCount;
-		public CommandHandler(DiscordSocketClient _client, CommandService _commands, IServiceProvider _provider, Guilds _guilds, Characters _characters)
+		public CommandHandler(DiscordShardedClient _client, CommandService _commands, IServiceProvider _provider, Guilds _guilds, Characters _characters)
 		{
 			provider = _provider;
 			client = _client;
@@ -43,9 +43,11 @@ namespace SnowyBot.Handlers
 		private async Task Client_MessageRecieved(SocketMessage arg)
 		{
 			SocketUserMessage socketMessage = arg as SocketUserMessage;
+			SocketGuildUser socketUser = arg.Author as SocketGuildUser;
 			if (socketMessage == null)
 				return;
-			SocketCommandContext context = new(client, socketMessage);
+			DiscordSocketClient shard = client.GetShardFor(socketUser.Guild);
+			SocketCommandContext context = new(shard, socketMessage);
 
 			if (arg is not SocketUserMessage message || message.Author.IsBot || message.Author.IsWebhook || message.Channel is IPrivateChannel)
 				return;

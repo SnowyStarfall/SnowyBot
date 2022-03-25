@@ -17,7 +17,7 @@ namespace SnowyBot.Services
 			if (!string.IsNullOrWhiteSpace(message))
 				await Append($"{message}\n", ConsoleColor.White).ConfigureAwait(false);
 			else if (exception == null)
-				await Append("Uknown Exception. Exception Returned Null.\n", ConsoleColor.DarkRed).ConfigureAwait(false);
+				await Append("Unknown Exception. Exception Returned Null.\n", ConsoleColor.DarkRed).ConfigureAwait(false);
 			else if (exception.Message == null)
 				await Append($"Unknown \n{exception.StackTrace}\n", GetConsoleColor(severity)).ConfigureAwait(false);
 			else
