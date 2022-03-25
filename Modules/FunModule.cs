@@ -140,7 +140,7 @@ namespace SnowyBot.Modules
 		{
 			if (Context.Message.MentionedUserIds.Count > 0)
 			{
-				IUser user = await DiscordService.client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
+				IUser user = await Context.Client.GetUserAsync(Context.Message.MentionedUserIds.First()).ConfigureAwait(false);
 
 				int value = 0;
 

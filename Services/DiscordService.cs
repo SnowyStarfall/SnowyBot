@@ -33,7 +33,7 @@ namespace SnowyBot.Services
 		public static BotConfig config;
 		public static CancellationToken botAlive;
 
-		public static readonly DiscordSocketClient client;
+		public static readonly DiscordShardedClient client;
 		public static readonly YoutubeClient youTube;
 		public static readonly LavaNode lavaNode;
 		public static readonly InteractivityService interactivity;
@@ -70,7 +70,7 @@ namespace SnowyBot.Services
 		{
 			// Service Setup //
 			provider = ConfigureServices();
-			client = provider.GetRequiredService<DiscordSocketClient>();
+			client = provider.GetRequiredService<DiscordShardedClient>();
 			youTube = provider.GetRequiredService<YoutubeClient>();
 			lavaNode = provider.GetRequiredService<LavaNode>();
 			interactivity = provider.GetRequiredService<InteractivityService>();
@@ -89,7 +89,7 @@ namespace SnowyBot.Services
 			lavaNode.OnTrackEnded += lavaModule.TrackEnded;
 
 			// Discord Events //
-			client.Ready += Client_Ready;
+			client.ShardReady += Client_ShardReady;
 			client.Log += Client_Log;
 			client.UserJoined += Client_UserJoined;
 			client.UserLeft += Client_UserLeft;
@@ -128,7 +128,6 @@ namespace SnowyBot.Services
 			await client.LoginAsync(TokenType.Bot, config.DiscordToken).ConfigureAwait(false);
 			await client.StartAsync().ConfigureAwait(false);
 			await commands.AddModulesAsync(Assembly.GetEntryAssembly(), provider).ConfigureAwait(false);
-			Snowy = await client.GetUserAsync(402246856752627713).ConfigureAwait(false);
 			await Task.Delay(-1, botAlive).ConfigureAwait(false);
 		}
 		private static async Task ConfigAsync()
@@ -142,7 +141,7 @@ namespace SnowyBot.Services
 		private static ServiceProvider ConfigureServices()
 		{
 			return new ServiceCollection()
-			.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig()
+			.AddSingleton(new DiscordShardedClient(new DiscordSocketConfig()
 			{
 				LogLevel = LogSeverity.Verbose,
 				AlwaysDownloadUsers = true,
@@ -183,8 +182,10 @@ namespace SnowyBot.Services
 			.AddSingleton<YoutubeClient>()
 			.BuildServiceProvider();
 		}
-		private static async Task Client_Ready()
+		private static async Task Client_ShardReady(DiscordSocketClient arg)
 		{
+			if(Snowy == null)
+				Snowy = await arg.GetUserAsync(402246856752627713).ConfigureAwait(false);
 			await lavaNode.ConnectAsync().ConfigureAwait(false);
 			string path = Assembly.GetExecutingAssembly().Location + "Database/LavaNodeData.lava";
 			path = path.Replace("bin\\Debug\\net6.0\\SnowyBot.dll", "");

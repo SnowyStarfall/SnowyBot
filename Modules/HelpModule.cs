@@ -30,7 +30,7 @@ namespace SnowyBot.Modules
 				builder.AddField("Config (Admin)", "prefix, deletemusic, welcome, goodbye, changelog, roles", false);
 				builder.WithCurrentTimestamp();
 				builder.WithColor(new Color(0xcc70ff));
-				builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+				builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await Context.Client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
 				await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 				return;
@@ -40,7 +40,7 @@ namespace SnowyBot.Modules
 			builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
 			builder.WithCurrentTimestamp();
 			builder.WithColor(new Color(0xcc70ff));
-			builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+			builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await Context.Client.GetUserAsync(402246856752627713).ConfigureAwait(false) as SocketUser)?.GetAvatarUrl() ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
 			switch (command)
 			{

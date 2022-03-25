@@ -29,7 +29,7 @@ namespace SnowyBot.Modules
 			//builder.AddField("6. Roles", "Manage reactive roles.");
 			//builder.WithCurrentTimestamp();
 			//builder.WithColor(new Color(0xcc70ff));
-			//builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Png) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+			//builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await Context.Client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Png) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
 			//IUserMessage m1 = await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 
@@ -223,7 +223,7 @@ namespace SnowyBot.Modules
 			builder.AddField("3. Edit Roles", "Edit roles for a reactive message.");
 			builder.WithCurrentTimestamp();
 			builder.WithColor(new Color(0xcc70ff));
-			builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Gif) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+			builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await Context.Client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Gif) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
 			IUserMessage embed = await Context.Channel.SendMessageAsync(null, false, builder.Build());
 
@@ -429,7 +429,7 @@ namespace SnowyBot.Modules
 					builder.AddField("Remove Role", "Remove a role from this reactive message.");
 					builder.WithCurrentTimestamp();
 					builder.WithColor(new Color(0xcc70ff));
-					builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await DiscordService.client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Gif) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
+					builder.WithFooter("Bot created by SnowyStarfall - Snowy#0364", (await Context.Client.GetUserAsync(402246856752627713ul).ConfigureAwait(false)).GetAvatarUrl(ImageFormat.Gif) ?? "https://cdn.discordapp.com/attachments/601939916728827915/903417708534706206/shady_and_crystal_vampires_cropped_for_bot.png");
 
 					ComponentBuilder componentBuilder = new();
 					componentBuilder.WithButton("Add Role", $"ReactiveRolesAdd:{Context.User.Id}:{channel.Guild.Id}:{channel.Id}:{message.Id}", ButtonStyle.Primary);

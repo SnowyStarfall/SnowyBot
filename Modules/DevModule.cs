@@ -30,7 +30,7 @@ namespace SnowyBot.Modules
 		[RequireOwner]
 		public async Task User([Remainder] string ID)
 		{
-			IUser user = await DiscordService.client.GetUserAsync(ulong.Parse(ID)).ConfigureAwait(false);
+			IUser user = await Context.Client.GetUserAsync(ulong.Parse(ID)).ConfigureAwait(false);
 			RestUser rest = user as RestUser;
 			EmbedBuilder builder = new();
 			builder.WithAuthor(Context.User.Username, Context.User.GetAvatarUrl());
