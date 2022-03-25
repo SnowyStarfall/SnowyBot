@@ -184,12 +184,23 @@ namespace SnowyBot.Modules
 			}
 		}
 		[Command("Jumbo")]
-		public async Task Jumbo([Remainder] string emoji)
+		public async Task Jumbo([Remainder] string emoji = null)
 		{
-			bool valid = Emote.TryParse(emoji, out var emote);
-			if (!valid)
+			bool valid2 = Emote.TryParse(emoji, out var emote2);
+			if (valid2)
+			{
+				await Context.Channel.SendMessageAsync(emote2.Url).ConfigureAwait(false);
 				return;
-			await Context.Channel.SendMessageAsync(emote.Url).ConfigureAwait(false);
+			}
+			if (Context.Message.ReferencedMessage != null)
+			{
+				bool valid1 = Emote.TryParse(Context.Message.ReferencedMessage.Content, out var emote1);
+				if (valid1)
+				{
+					await Context.Channel.SendMessageAsync(emote1.Url).ConfigureAwait(false);
+					return;
+				}
+			}
 		}
 		[Command("Awoo")]
 		public async Task Awoo()

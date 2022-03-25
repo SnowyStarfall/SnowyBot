@@ -16,6 +16,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="NewFolder\**" />
+    <EmbeddedResource Remove="NewFolder\**" />
+    <None Remove="NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Discord.InteractivityAddon.Labs" Version="2.4.1-labs-20210709.1" />
     <PackageReference Include="Discord.Net.Labs" Version="3.6.1" />
     <PackageReference Include="Discord.Net.Labs.Commands" Version="3.6.1" />
@@ -55,10 +61,6 @@
 		<DnxInvisibleContent Include="SnowyBot\Lavalink.bat" />
 		<DnxInvisibleContent Include="SnowyBot\nuget.config" />
 		<DnxInvisibleContent Include="SnowyBot\SwapToken.bat" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="NewFolder\" />
 	</ItemGroup>
 
 </Project>
