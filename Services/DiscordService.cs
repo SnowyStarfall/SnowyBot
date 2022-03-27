@@ -96,7 +96,7 @@ namespace SnowyBot.Services
 
 			// Status Timer //
 			statusTimer = new(60000);
-			statusTimer.Elapsed += lavaModule.StatusTumer_Elapsed;
+			statusTimer.Elapsed += StatusTumer_Elapsed;
 			statusTimer.Enabled = true;
 
 			// Second Timer //
@@ -184,7 +184,7 @@ namespace SnowyBot.Services
 		}
 		private static async Task Client_ShardReady(DiscordSocketClient arg)
 		{
-			if(Snowy == null)
+			if (Snowy == null)
 				Snowy = await arg.GetUserAsync(402246856752627713).ConfigureAwait(false);
 			await lavaNode.ConnectAsync().ConfigureAwait(false);
 			string path = Assembly.GetExecutingAssembly().Location + "Database/LavaNodeData.lava";
@@ -250,7 +250,7 @@ namespace SnowyBot.Services
 				await LoggingService.LogAsync("resume", LogSeverity.Info, "Resumption complete. Deleting data file...").ConfigureAwait(false);
 				File.Delete(path);
 			}
-			await client.SetGameAsync($"music for {lavaNode.Players.Count()} servers.").ConfigureAwait(false);
+			StatusTumer_Elapsed(null, null);
 		}
 		private static async Task Client_Log(LogMessage logMessage)
 		{
@@ -301,6 +301,15 @@ namespace SnowyBot.Services
 				return;
 
 			await channel.SendMessageAsync(split[1]).ConfigureAwait(false);
+		}
+		private static async void StatusTumer_Elapsed(object sender, ElapsedEventArgs e)
+		{
+			int lavaCount = lavaNode.Players.Count();
+			int shardCount = client.Shards.Count;
+			string status = $"music for {lavaCount} server{(lavaCount == 1 ? "" : "s")}. " +
+							$"Hosting {shardCount} shard{(shardCount == 1 ? "" : "s")}!";
+			await client.SetGameAsync(status).ConfigureAwait(false);
+			await LoggingService.LogAsync("timer", LogSeverity.Info, $"Status timer elapsed. Status set to: {status}.").ConfigureAwait(false);
 		}
 		private static async void SecondTimer_Elapsed(object sender, ElapsedEventArgs e)
 		{

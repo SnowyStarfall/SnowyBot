@@ -1066,11 +1066,5 @@ namespace SnowyBot.Modules
 			}
 			return true;
 		}
-		public async void StatusTumer_Elapsed(object sender, ElapsedEventArgs e)
-		{
-			int count = DiscordService.lavaNode.Players.Count();
-			await DiscordService.client.SetGameAsync($"music for {count} server{(count == 1 ? "" : "s")}.").ConfigureAwait(false);
-			await LoggingService.LogAsync("timer", LogSeverity.Info, $"Status timer elapsed. Status set to: Playing music for {count} server{(count == 1 ? "" : "s")}.").ConfigureAwait(false);
-		}
 	}
 }
