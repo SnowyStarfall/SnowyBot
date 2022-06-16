@@ -114,11 +114,6 @@ namespace SnowyBot.Modules
 			}
 			await Context.Channel.SendMessageAsync(results.ToList().First().Url).ConfigureAwait(false);
 		}
-		[Command("Image")]
-		[RequireOwner]
-		public async Task Image([Remainder] string query)
-		{
-		}
 		[Command("SafeStop")]
 		[RequireOwner]
 		public async Task SafeStop()
@@ -171,6 +166,17 @@ namespace SnowyBot.Modules
 				await LoggingService.LogAsync("nickname", LogSeverity.Verbose, $"Nickname set to {nickname} in {guild.Name}: {guild.Id}").ConfigureAwait(false);
 			}
 			await Context.Channel.SendMessageAsync("Nickname set to " + nickname + $" in {DiscordService.client.Guilds.Count} guilds!").ConfigureAwait(false);
+		}
+		//[Command("SetStatus")]
+		[Command("ListGuilds")]
+		[RequireOwner]
+		public async Task ListGuilds()
+		{
+			await Task.Run(() =>
+			{
+				for (int i = 0; i < DiscordService.client.Guilds.Count; i++)
+					Console.WriteLine(DiscordService.client.Guilds.ElementAt(i).Name + ": " + DiscordService.client.Guilds.ElementAt(i).Id);
+			});
 		}
 	}
 }

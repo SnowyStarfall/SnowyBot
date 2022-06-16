@@ -20,8 +20,6 @@ namespace SnowyBot.Modules
 		[Alias(new string[] { "Server", "Guild" })]
 		public async Task Info()
 		{
-			Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
-
 			SocketCommandContext context = Context as SocketCommandContext;
 			int numUsers = 0;
 			int numBots = 0;
@@ -80,19 +78,19 @@ namespace SnowyBot.Modules
 			int size = random.Next(0, 6);
 
 			string markdownStr = markdown == 0 ? "*" :
-													 markdown == 1 ? "**" :
-													 markdown == 2 ? "***" :
-													 markdown == 3 ? "_" :
-													 markdown == 4 ? "*_" :
-													 markdown == 5 ? "**_" :
-													 "***_";
+								 markdown == 1 ? "**" :
+								 markdown == 2 ? "***" :
+								 markdown == 3 ? "_" :
+								 markdown == 4 ? "*_" :
+								 markdown == 5 ? "**_" :
+								 "***_";
 
 			string sizeStr = size == 0 ? "snort" :
-											 size == 1 ? "SNORT" :
-											 size == 2 ? "sɴᴏʀᴛ" :
-											 size == 3 ? "ˢⁿᵒʳᵗ" :
-											 size == 4 ? "ₛₙₒᵣₜ" :
-											 "ˢᴺᴼᴿᵀ";
+							 size == 1 ? "SNORT" :
+							 size == 2 ? "sɴᴏʀᴛ" :
+							 size == 3 ? "ˢⁿᵒʳᵗ" :
+							 size == 4 ? "ₛₙₒᵣₜ" :
+							 "ˢᴺᴼᴿᵀ";
 
 			await Context.Channel.SendMessageAsync($"-{markdownStr}{sizeStr}{new string(markdownStr.ToCharArray().Reverse().ToArray())}-").ConfigureAwait(false);
 			await Context.Message.DeleteAsync().ConfigureAwait(false);
@@ -105,9 +103,9 @@ namespace SnowyBot.Modules
 			int type = random.Next(0, 2);
 			int response = type == 0 ? random.Next(0, 11) : type == 2 ? random.Next(11, 16) : random.Next(16, 21);
 			string[] responses = new string[] { "It is certain.", "It is decidedly so.", "Without a doubt.", "Yes definitely.", "You may rely on it.",
-																					"You may rely on it.", "Most likely.", "Outlook good.", "Yes.", "Signs point to yes.",
-																					"Reply hazy, try again.", "Ask again later.", "Better not tell you now.", "Cannot predict now.", "Concentrate and ask again.",
-																					"Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very doubtful."};
+												"You may rely on it.", "Most likely.", "Outlook good.", "Yes.", "Signs point to yes.",
+												"Reply hazy, try again.", "Ask again later.", "Better not tell you now.", "Cannot predict now.", "Concentrate and ask again.",
+												"Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very doubtful."};
 			await Context.Message.ReplyAsync($"{responses[response]}").ConfigureAwait(false);
 		}
 		[Command("A")]
@@ -373,5 +371,6 @@ namespace SnowyBot.Modules
 		{
 			await Context.Channel.SendMessageAsync("https://www.youtube.com/watch?v=-6QifNVcxbA").ConfigureAwait(false);
 		}
+
 	}
 }

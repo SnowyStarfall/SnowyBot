@@ -16,33 +16,28 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="NewFolder\**" />
-    <EmbeddedResource Remove="NewFolder\**" />
-    <None Remove="NewFolder\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Discord.InteractivityAddon.Labs" Version="2.4.1-labs-20210709.1" />
-    <PackageReference Include="Discord.Net.Labs" Version="3.6.1" />
-    <PackageReference Include="Discord.Net.Labs.Commands" Version="3.6.1" />
-    <PackageReference Include="Discord.Net.Labs.Core" Version="3.6.1" />
-    <PackageReference Include="Discord.Net.Labs.Rest" Version="3.6.1" />
-    <PackageReference Include="Discord.Net.Labs.Webhook" Version="3.6.1" />
-    <PackageReference Include="Discord.Net.Labs.WebSocket" Version="3.6.1" />
-    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.56.0.2630" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.3">
+    <PackageReference Include="Discord.Net" Version="3.6.1" />
+    <PackageReference Include="Discord.Net.Analyzers" Version="3.5.0" />
+    <PackageReference Include="Discord.Net.Commands" Version="3.6.1" />
+    <PackageReference Include="Discord.Net.Core" Version="3.6.1" />
+    <PackageReference Include="Discord.Net.Interactions" Version="3.6.1" />
+    <PackageReference Include="Discord.Net.Rest" Version="3.6.1" />
+    <PackageReference Include="Discord.Net.Webhook" Version="3.6.1" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="3.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.3">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.1" />
     <PackageReference Include="System.Threading.Tasks.Dataflow" Version="6.0.0" />
     <PackageReference Include="Victoria" Version="5.2.8" />
-    <PackageReference Include="YoutubeExplode" Version="6.1.0" />
+    <PackageReference Include="YoutubeExplode" Version="6.1.2" />
   </ItemGroup>
 
   <ItemGroup>

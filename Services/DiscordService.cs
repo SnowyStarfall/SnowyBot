@@ -306,8 +306,11 @@ namespace SnowyBot.Services
 		{
 			int lavaCount = lavaNode.Players.Count();
 			int shardCount = client.Shards.Count;
-			string status = $"music for {lavaCount} server{(lavaCount == 1 ? "" : "s")}. " +
-							$"Hosting {shardCount} shard{(shardCount == 1 ? "" : "s")}!";
+			int guildCount = client.Guilds.Count;
+			string status = $"Invite link is now public! Check my profile. 💜 " +
+							$"Playing music for {lavaCount} server{(lavaCount == 1 ? "" : "s")}. " +
+							$"Hosting {shardCount} shard{(shardCount == 1 ? "" : "s")} for {guildCount} guild{(guildCount == 1 ? "" : "s")}. ";
+							
 			await client.SetGameAsync(status).ConfigureAwait(false);
 			await LoggingService.LogAsync("timer", LogSeverity.Info, $"Status timer elapsed. Status set to: {status}.").ConfigureAwait(false);
 		}
