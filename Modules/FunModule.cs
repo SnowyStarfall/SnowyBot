@@ -371,6 +371,19 @@ namespace SnowyBot.Modules
 		{
 			await Context.Channel.SendMessageAsync("https://www.youtube.com/watch?v=-6QifNVcxbA").ConfigureAwait(false);
 		}
+		[Command("Poll")]
+		[RequireUserPermission(GuildPermission.ManageMessages)]
+		public async Task Poll()
+		{
+			if (Context.Message.ReferencedMessage == null)
+				return;
 
+			Emoji yes = Emoji.Parse("✅");
+			Emoji no = Emoji.Parse("❌");
+			await Context.Message.ReferencedMessage.AddReactionsAsync(new Emoji[2] { yes, no }).ConfigureAwait(false);
+
+			try { await Context.Message.DeleteAsync().ConfigureAwait(false); }
+			catch { }
+		}
 	}
 }
