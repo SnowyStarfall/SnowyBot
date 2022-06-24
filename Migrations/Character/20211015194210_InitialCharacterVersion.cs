@@ -42,10 +42,7 @@ namespace SnowyBot.Migrations.Character
 						ReferenceURL = table.Column<string>(type: "longtext", nullable: true)
 									.Annotation("MySql:CharSet", "utf8mb4")
 					},
-					constraints: table =>
-					{
-						table.PrimaryKey("PK_Characters", x => x.CharacterID);
-					})
+					constraints: table => table.PrimaryKey("PK_Characters", x => x.CharacterID))
 					.Annotation("MySql:CharSet", "utf8mb4");
 		}
 

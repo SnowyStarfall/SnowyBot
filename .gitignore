@@ -1,6 +1,7 @@
 .vs/*
 obj/*
 bin/*
+Logs/*
 *.json
 LavaLink/*
 Properties/*

@@ -18,10 +18,7 @@ namespace SnowyBot.Migrations
 						Prefix = table.Column<string>(type: "longtext", nullable: true)
 									.Annotation("MySql:CharSet", "utf8mb4")
 					},
-					constraints: table =>
-					{
-						table.PrimaryKey("PK_Guilds", x => x.ID);
-					})
+					constraints: table => table.PrimaryKey("PK_Guilds", x => x.ID))
 					.Annotation("MySql:CharSet", "utf8mb4");
 		}
 

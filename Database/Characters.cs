@@ -31,7 +31,7 @@ namespace SnowyBot.Database
 									 .ConfigureAwait(false);
 			if (character == null)
 			{
-				await LoggingService.LogAsync("CHAR", Discord.LogSeverity.Error, $"Character was null when editing character.\nUser: {userID}\nCharacter: {characterID}\nEdit Type: {type}\nValue: {value}").ConfigureAwait(false);
+				await LoggingGlobal.LogAsync("CHAR", Discord.LogSeverity.Error, $"Character was null when editing character.\nUser: {userID}\nCharacter: {characterID}\nEdit Type: {type}\nValue: {value}").ConfigureAwait(false);
 				return;
 			}
 			switch (type)
@@ -75,14 +75,14 @@ namespace SnowyBot.Database
 			}
 			await context.SaveChangesAsync().ConfigureAwait(false);
 		}
-		public async Task<(Character, string)> HasCharPrefix(ulong userID, string message)
+		public async Task<Character> HasCharPrefix(ulong userID, string message)
 		{
-			Character chara = await context.Characters
+			Character character = await context.Characters
 									 .AsAsyncEnumerable()
 									 .Where(x => x.UserID == userID && message.StartsWith(x.Prefix))
 									 .FirstOrDefaultAsync()
 									 .ConfigureAwait(false);
-			return (chara, chara?.Prefix);
+			return character;
 		}
 		public async Task<Character> CheckPrefixExists(ulong userID, string prefix)
 		{
