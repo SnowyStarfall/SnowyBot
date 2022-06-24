@@ -59,7 +59,7 @@ csharp_prefer_braces = false:suggestion
 #Style - expression bodied member options
 
 #prefer expression-bodied members for constructors
-csharp_style_expression_bodied_constructors = true:suggestion
+csharp_style_expression_bodied_constructors = true:silent
 #prefer block bodies for methods
 csharp_style_expression_bodied_methods = false:none
 
@@ -154,6 +154,18 @@ dotnet_diagnostic.CS4014.severity = silent
 
 # CS8604: Possible null reference argument.
 dotnet_diagnostic.CS8604.severity = silent
+
+# CA2211: Non-constant fields should not be visible
+dotnet_diagnostic.CA2211.severity = silent
+
+# RCS1003: Add braces to if-else (when expression spans over multiple lines).
+dotnet_diagnostic.RCS1003.severity = silent
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = silent
+
+# IDE0021: Use expression body for constructors
+dotnet_diagnostic.IDE0021.severity = silent
 
 [*.{cs,vb}]
 tab_width=4

@@ -1,4 +1,5 @@
-﻿using SnowyBot.Services;
+﻿using SnowyBot.Containers;
+using SnowyBot.Services;
 using SnowyBot.Structs;
 using System;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace SnowyBot
 		{
 			handler = new ConsoleEventDelegate(ConsoleEventCallback);
 			SetConsoleCtrlHandler(handler, true);
-			await DiscordService.InitializeAsync().ConfigureAwait(false);
+			await DiscordGlobal.InitializeAsync().ConfigureAwait(false);
 		}
 		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern bool SetConsoleCtrlHandler(ConsoleEventDelegate callback, bool add);
@@ -26,20 +27,20 @@ namespace SnowyBot
 			{
 				Console.WriteLine("Shutting down...");
 
-				if (DiscordService.lavaNode.Players.Any())
+				if (DiscordGlobal.lavaNode.Players.Any())
 				{
 					Console.WriteLine("Saving player data...");
 
 					LavaTable table = new();
 
-					foreach (LavaPlayer player in DiscordService.lavaNode.Players)
+					foreach (LavaPlayer player in DiscordGlobal.lavaNode.Players)
 					{
-						LavaData data = new();
+						LavaEntry data = new();
 						data.Configure(player);
 						table.table.TryAdd(player.TextChannel.GuildId, data);
 					}
 
-					LavaTable.WriteToBinaryFile("C:/Users/Snowy/Documents/My Games/Terraria/ModLoader/Mod Sources/SnowyBotCSharp/Database/LavaNodeData.lava", table);
+					LavaTable.WriteToBinaryFile("C:/Users/Snowy/Documents/My Games/Terraria/ModLoader/Mod Sources/SnowyBot/Database/LavaNodeData.lava", table);
 				}
 			}
 			return false;

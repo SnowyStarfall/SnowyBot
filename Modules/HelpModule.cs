@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using SnowyBot.Services;
 using System.Threading.Tasks;
 
 namespace SnowyBot.Modules
@@ -19,7 +18,6 @@ namespace SnowyBot.Modules
 			EmbedBuilder builder = new();
 			if (command == null)
 			{
-
 				builder.WithThumbnailUrl("https://cdn.discordapp.com/emojis/930539422343106560.webp?size=512&quality=lossless");
 				builder.WithTitle("SnowyBot Commands!");
 				//builder.WithDescription("Use `!help detailed` to list all commands and their use!");
@@ -205,7 +203,7 @@ namespace SnowyBot.Modules
 					builder.WithDescription("Opens the prompt for setting up Reactive Roles.\n- !roles");
 					break;
 			}
-			if (builder.Title == null || builder.Title == string.Empty)
+			if (string.IsNullOrEmpty(builder.Title))
 			{
 				await Context.Channel.SendMessageAsync("Invalid command.").ConfigureAwait(false);
 				return;

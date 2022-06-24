@@ -3,11 +3,11 @@ using Victoria.Filters;
 
 namespace SnowyBot
 {
-	public static partial class SnowyBotUtils
+	public static partial class Utilities
 	{
 		public static void ConfigureEQ()
 		{
-			EqualizerBand[] normalBands = new[]
+			DiscordGlobal.lavaModule.normalEQ = (new[]
 {
 				new EqualizerBand(0, 0),
 				new EqualizerBand(1, 0),
@@ -24,9 +24,8 @@ namespace SnowyBot
 				new EqualizerBand(12, 0),
 				new EqualizerBand(13, 0),
 				new EqualizerBand(14, 0)
-			};
-			DiscordService.normalEQ = normalBands;
-			EqualizerBand[] bassBoostBands = new[]
+			});
+			DiscordGlobal.lavaModule.bassBoostEQ = (new[]
 			{
 				new EqualizerBand(0, 0.99),
 				new EqualizerBand(1, 0.99),
@@ -43,8 +42,7 @@ namespace SnowyBot
 				new EqualizerBand(12, 0.99),
 				new EqualizerBand(13, 0.99),
 				new EqualizerBand(14, 0.99)
-			};
-			DiscordService.bassBoostEQ = bassBoostBands;
+			});
 		}
 	}
 }

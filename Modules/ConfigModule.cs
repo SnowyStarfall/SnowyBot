@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using SnowyBot.Database;
 using SnowyBot.Services;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using static Discord.MentionUtils;
 
@@ -12,9 +13,15 @@ namespace SnowyBot.Modules
 	public class ConfigModule : ModuleBase
 	{
 		public readonly Guilds guilds;
-		public ConfigModule(Guilds _guilds) => guilds = _guilds;
 
+		public ConfigModule(Guilds guilds)
+		{
+			this.guilds = guilds;
+		}
+
+		// Commands
 		[Command("Config")]
+		[RequireUserPermission(GuildPermission.Administrator)]
 		public async Task Config()
 		{
 			//EmbedBuilder builder = new EmbedBuilder();
@@ -67,14 +74,14 @@ namespace SnowyBot.Modules
 		public async Task Prefix([Remainder] string input = null)
 		{
 			SocketGuildUser user = Context.User as SocketGuildUser;
-			if (input == null || input.Length == 0)
+			if (string.IsNullOrEmpty(input))
 			{
 				await ReplyAsync($"Server prefix is `{await guilds.GetGuildPrefix(Context.Guild.Id).ConfigureAwait(false)}`.").ConfigureAwait(false);
 				return;
 			}
 			if (!user.GuildPermissions.Administrator)
 			{
-				IUserMessage m = await ReplyAsync($"You lack the permissions to use this command.").ConfigureAwait(false);
+				IUserMessage m = await ReplyAsync("You lack the permissions to use this command.").ConfigureAwait(false);
 				await Task.Delay(5000).ConfigureAwait(false);
 				await m.DeleteAsync().ConfigureAwait(false);
 				return;
@@ -118,7 +125,7 @@ namespace SnowyBot.Modules
 			IMessageChannel channel = null;
 			IUserMessage m2 = await Context.Channel.SendMessageAsync("Mention the channel you would like the welcome to appear in.").ConfigureAwait(false);
 
-			var result1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
+			var result1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
 			if (result1.IsSuccess)
 			{
@@ -161,7 +168,7 @@ namespace SnowyBot.Modules
 			IMessageChannel channel = null;
 			IUserMessage m2 = await Context.Channel.SendMessageAsync("Mention the channel you would like the goodbye to appear in.").ConfigureAwait(false);
 
-			var result1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
+			var result1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 
 			if (result1.IsSuccess)
 			{
@@ -197,7 +204,7 @@ namespace SnowyBot.Modules
 			{
 				if (!TryParseChannel(channel, out ulong channelID))
 				{
-					await Context.Channel.SendMessageAsync($"Incorrect channel mention format.").ConfigureAwait(false);
+					await Context.Channel.SendMessageAsync("Incorrect channel mention format.").ConfigureAwait(false);
 					return;
 				}
 
@@ -210,11 +217,11 @@ namespace SnowyBot.Modules
 				await guilds.SetChangelogChannel(Context.Guild.Id, 0).ConfigureAwait(false);
 			}
 		}
-		[Command("roles")]
+		[Command("Roles")]
 		[RequireUserPermission(GuildPermission.ManageRoles)]
 		public async Task Role()
 		{
-			EmbedBuilder builder = new EmbedBuilder();
+			EmbedBuilder builder = new();
 			builder.WithAuthor($"{Context.User.Username}#{Context.User.Discriminator}", Context.User.GetAvatarUrl());
 			builder.WithTitle("Reactive Roles");
 			builder.WithDescription("Pick an option:");
@@ -227,7 +234,7 @@ namespace SnowyBot.Modules
 
 			IUserMessage embed = await Context.Channel.SendMessageAsync(null, false, builder.Build());
 
-			var option = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+			var option = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 			if (!option.IsSuccess || !int.TryParse(option.Value.Content, out _) || int.Parse(option.Value.Content) < 1 || int.Parse(option.Value.Content) > 3)
 			{
 				await Context.Channel.SendMessageAsync("Timed out or incorrect response.");
@@ -248,7 +255,7 @@ namespace SnowyBot.Modules
 				case 2:
 					await option.Value.DeleteAsync().ConfigureAwait(false);
 
-					if ((await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles == string.Empty || (await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles == null)
+					if ((await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles?.Length == 0 || (await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles == null)
 					{
 						IUserMessage m0 = await Context.Channel.SendMessageAsync("Please first create a message before adding roles.");
 						await Task.Delay(5000).ConfigureAwait(false);
@@ -257,7 +264,7 @@ namespace SnowyBot.Modules
 					}
 
 					IUserMessage m1 = await Context.Channel.SendMessageAsync("Please mention the channel which the message resides in.").ConfigureAwait(false);
-					var c1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+					var c1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 					if (c1.IsSuccess)
 					{
 						if (!TryParseChannel(c1.Value.Content, out ulong channelID1))
@@ -288,7 +295,7 @@ namespace SnowyBot.Modules
 					}
 
 					IUserMessage m5 = await Context.Channel.SendMessageAsync("Please enter the ID of the message.").ConfigureAwait(false);
-					var mr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+					var mr1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 					if (mr1.IsSuccess)
 					{
 						if (!ulong.TryParse(mr1.Value.Content, out ulong nessageIDParsed))
@@ -323,7 +330,7 @@ namespace SnowyBot.Modules
 
 					string text = string.Empty;
 					IUserMessage m9 = await Context.Channel.SendMessageAsync("Please enter the text to update to.").ConfigureAwait(false);
-					var mr2 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+					var mr2 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 					if (mr2.IsSuccess)
 					{
 						text = mr2.Value.Content;
@@ -337,10 +344,7 @@ namespace SnowyBot.Modules
 						return;
 					}
 
-					await message.ModifyAsync((MessageProperties properties) =>
-					{
-						properties.Content = text;
-					}).ConfigureAwait(false);
+					await message.ModifyAsync((MessageProperties properties) => properties.Content = text).ConfigureAwait(false);
 					IUserMessage m19 = await Context.Channel.SendMessageAsync($"Updated: {message.GetJumpUrl()}");
 					await Task.Delay(5000).ConfigureAwait(false);
 					await m19.DeleteAsync().ConfigureAwait(false);
@@ -348,7 +352,7 @@ namespace SnowyBot.Modules
 				case 3:
 					await option.Value.DeleteAsync().ConfigureAwait(false);
 
-					if ((await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles == string.Empty || (await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles == null)
+					if ((await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles?.Length == 0 || (await guilds.GetGuild(Context.Guild.Id).ConfigureAwait(false)).Roles == null)
 					{
 						IUserMessage m0 = await Context.Channel.SendMessageAsync("Please first create a message before adding roles.");
 						await Task.Delay(5000).ConfigureAwait(false);
@@ -357,7 +361,7 @@ namespace SnowyBot.Modules
 					}
 
 					IUserMessage m11 = await Context.Channel.SendMessageAsync("Please mention the channel which the message resides in.").ConfigureAwait(false);
-					var c2 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+					var c2 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 					if (c2.IsSuccess)
 					{
 						if (!TryParseChannel(c2.Value.Content, out ulong channelID2))
@@ -388,7 +392,7 @@ namespace SnowyBot.Modules
 					}
 
 					IUserMessage m15 = await Context.Channel.SendMessageAsync("Please enter the ID of the message.").ConfigureAwait(false);
-					var mr3 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+					var mr3 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 					if (mr3.IsSuccess)
 					{
 						if (!ulong.TryParse(mr3.Value.Content, out ulong nessageIDParsed1))
@@ -443,11 +447,49 @@ namespace SnowyBot.Modules
 					break;
 			}
 		}
+
+		// Responses
+		public async Task AddRole(SocketReaction reaction)
+		{
+			string roleID = await guilds.ExistsReactiveRole((reaction.Channel as SocketGuildChannel).Guild.Id, reaction.MessageId, reaction.Emote.Name).ConfigureAwait(false);
+			SocketGuildUser user = reaction.User.GetValueOrDefault() as SocketGuildUser;
+			if (roleID == null || user.IsBot)
+				return;
+			if (user.Roles.Contains(user.Guild.GetRole(ulong.Parse(roleID))))
+				return;
+			try
+			{
+				SocketRole role = user.Guild.GetRole(ulong.Parse(roleID));
+				await user.AddRoleAsync(role).ConfigureAwait(false);
+			}
+			catch
+			{
+
+			}
+		}
+		public async Task RemoveRole(SocketReaction reaction)
+		{
+			string roleID = await guilds.ExistsReactiveRole((reaction.Channel as SocketGuildChannel).Guild.Id, reaction.MessageId, reaction.Emote.Name).ConfigureAwait(false);
+			SocketGuildUser user = reaction.User.GetValueOrDefault() as SocketGuildUser;
+			if (roleID == null || user.IsBot)
+				return;
+			if (!user.Roles.Contains(user.Guild.GetRole(ulong.Parse(roleID))))
+				return;
+			try
+			{
+				SocketRole role = user.Guild.GetRole(ulong.Parse(roleID));
+				await user.RemoveRoleAsync(role).ConfigureAwait(false);
+			}
+			catch
+			{
+
+			}
+		}
 		public async Task SetupRoles()
 		{
 			bool makePost = true;
 			await Context.Channel.SendMessageAsync("Would you like to...\n`1`. Provide a preexisting message ID.\n`2`. Let me handle the post.").ConfigureAwait(false);
-			var mpr = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+			var mpr = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 			if (mpr.IsSuccess)
 			{
 				if (mpr.Value.Content == "1")
@@ -461,7 +503,7 @@ namespace SnowyBot.Modules
 
 			IMessageChannel channel = null;
 			await Context.Channel.SendMessageAsync($"Please mention the channel {(makePost ? "I should post in." : "the message is in.")}").ConfigureAwait(false);
-			var cr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+			var cr1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 			if (cr1.IsSuccess)
 			{
 				if (!TryParseChannel(cr1.Value.Content, out ulong channelID1))
@@ -479,7 +521,7 @@ namespace SnowyBot.Modules
 
 			string emoji = "";
 			await Context.Channel.SendMessageAsync("Please mention the emoji to use for this role. (Do not use emojis from a server that I'm not in.)").ConfigureAwait(false);
-			var e1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+			var e1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 			if (e1.IsSuccess)
 			{
 				bool flag1 = Emoji.TryParse(e1.Value.Content, out Emoji emojiID1);
@@ -502,7 +544,7 @@ namespace SnowyBot.Modules
 
 			ulong role = 0;
 			await Context.Channel.SendMessageAsync("Please mention the role to assign to the emoji.").ConfigureAwait(false);
-			var r1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+			var r1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 			if (r1.IsSuccess)
 			{
 				if (!TryParseRole(r1.Value.Content, out ulong roleID))
@@ -527,7 +569,7 @@ namespace SnowyBot.Modules
 
 				IMessage m1 = null;
 
-				var mr1 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
+				var mr1 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(120)).ConfigureAwait(false);
 
 				if (mr1.IsSuccess)
 				{
@@ -558,7 +600,7 @@ namespace SnowyBot.Modules
 			}
 
 			await Context.Channel.SendMessageAsync("Provide the text to send.").ConfigureAwait(false);
-			var mr2 = await DiscordService.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
+			var mr2 = await DiscordGlobal.interactivity.NextMessageAsync(x => (x.Author.Id == Context.User.Id) && (x.Channel.Id == Context.Channel.Id) && (x.Content != string.Empty), null, TimeSpan.FromSeconds(300)).ConfigureAwait(false);
 			if (mr2.IsSuccess)
 			{
 				IMessage m2 = await channel.SendMessageAsync(mr2.Value.Content).ConfigureAwait(false);
@@ -571,7 +613,5 @@ namespace SnowyBot.Modules
 				return;
 			}
 		}
-		//[Command("SetupReactChannels")]
-		//[RequireUserPermission(GuildPermission.Administrator)]
 	}
 }

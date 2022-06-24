@@ -1,11 +1,31 @@
 ﻿using Discord;
 using System;
+using System.IO;
+using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SnowyBot.Services
 {
-	public static class LoggingService
+	public static class LoggingGlobal
 	{
+		public static FileStream LogStream;
+		static LoggingGlobal()
+		{
+			DateTime date = DateTime.Now;
+			string path = Assembly.GetExecutingAssembly().Location.Substring(0, Assembly.GetExecutingAssembly().Location.IndexOf("SnowyBot") + 9);
+			string dateString = "Log-" + date.Day + "-" + date.Month + "-" + date.Year + "_";
+			DirectoryInfo info = new(path + "Logs/");
+			int counter = 1;
+			foreach (FileInfo file in info.GetFiles())
+			{
+				if (file.Name.Contains(dateString))
+					counter++;
+			}
+			dateString += counter;
+			LogStream = new(path + "Logs/" + dateString + ".txt", FileMode.OpenOrCreate, FileAccess.Write);
+		}
+
 		public static async Task LogAsync(string src, LogSeverity severity, string message, Exception exception = null)
 		{
 			if (severity.Equals(null))
@@ -17,26 +37,20 @@ namespace SnowyBot.Services
 			if (!string.IsNullOrWhiteSpace(message))
 				await Append($"{message}\n", ConsoleColor.White).ConfigureAwait(false);
 			else if (exception == null)
-				await Append("Unknown Exception. Exception Returned Null.\n", ConsoleColor.DarkRed).ConfigureAwait(false);
+				await Append($"Unknown Exception. Exception Returned Null. Source: {src} Severity: {severity}\n", ConsoleColor.DarkRed).ConfigureAwait(false);
 			else if (exception.Message == null)
 				await Append($"Unknown \n{exception.StackTrace}\n", GetConsoleColor(severity)).ConfigureAwait(false);
 			else
 				await Append($"{exception.Message ?? "Unknown"}\n{exception.StackTrace ?? "Unknown"}\n", GetConsoleColor(severity)).ConfigureAwait(false);
 		}
-		public static async Task LogCriticalAsync(string source, string message, Exception exc = null) => await LogAsync(source, LogSeverity.Critical, message, exc).ConfigureAwait(false);
-		public static async Task LogInformationAsync(string source, string message) => await LogAsync(source, LogSeverity.Info, message).ConfigureAwait(false);
 		private static async Task Append(string message, ConsoleColor color)
 		{
-			await Task.Run(() =>
-			{
-				Console.ForegroundColor = color;
-				Console.Write(message);
-			}).ConfigureAwait(false);
+			Console.ForegroundColor = color;
+			Console.Write(message);
+			await LogStream.WriteAsync(new UTF8Encoding(true).GetBytes(message));
 		}
 		private static string SourceToString(string src)
 		{
-			if (src.Contains("lavanode", StringComparison.OrdinalIgnoreCase))
-				return "LAVA";
 			return src.ToLower() switch
 			{
 				"discord" => "DISC",

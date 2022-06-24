@@ -63,7 +63,7 @@ namespace SnowyBot.Database
 				context.Add(new Guild { ID = guildID, Prefix = "!", Roles = $"{channelID};{messageID};{roleID};{emote}" });
 				return;
 			}
-			if (guild.Roles == string.Empty || guild.Roles == null)
+			if (guild.Roles?.Length == 0 || guild.Roles == null)
 				guild.Roles = $"{channelID};{messageID};{roleID};{emote}";
 			else
 				guild.Roles += $"|{channelID};{messageID};{roleID};{emote}";
@@ -156,7 +156,7 @@ namespace SnowyBot.Database
 			{
 				int index2 = guild.UserPoints.IndexOf("|", index1);
 				string[] split = guild.UserPoints[index1..index2].Replace("|", "").Split(";");
-				string newValue = $"{userID};{(ulong.Parse(split[1]) + amount < 0 ? "0" : ulong.Parse(split[1]) + amount)}";
+				string newValue = $"{userID};{ulong.Parse(split[1]) + amount}";
 				guild.UserPoints = guild.UserPoints.Replace($"{split[0]};{split[1]}", newValue);
 				await context.SaveChangesAsync().ConfigureAwait(false);
 				return;
@@ -207,7 +207,7 @@ namespace SnowyBot.Database
 		{
 			var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
 			if (guild == null)
-				context.Add(new Guild { ID = id, Prefix = "!", PointGain = $"5;10" });
+				context.Add(new Guild { ID = id, Prefix = "!", PointGain = "5;10" });
 			if (guild.PointGain == null)
 				guild.PointGain = "5;10";
 			string[] split = guild.PointGain.Split(';');
@@ -218,22 +218,21 @@ namespace SnowyBot.Database
 		{
 			var guild = await context.Guilds.FindAsync(id).ConfigureAwait(false);
 			if (guild == null)
-				context.Add(new Guild { ID = id, Prefix = "!", PointGain = $"5;10" });
+				context.Add(new Guild { ID = id, Prefix = "!", PointGain = "5;10" });
 			if (guild.PointGain == null)
 				guild.PointGain = "5;10";
 			List<string> leaderboard = new();
 			string[] split = guild.UserPoints.Split('|');
-			foreach (string line in split)
-				leaderboard.Add(line);
+			leaderboard.AddRange(split);
 			static int SortPointsList(string x, string y)
 			{
 				string[] split1 = x.Split(';');
 				string[] split2 = y.Split(';');
-				if (split1[0] == string.Empty)
+				if (split1[0]?.Length == 0)
 					return -1;
-				if (split2[0] == string.Empty)
+				if (split2[0]?.Length == 0)
 					return 1;
-				if (split1[0] == string.Empty && split2[0] == string.Empty)
+				if (split1[0]?.Length == 0 && split2[0]?.Length == 0)
 					return 0;
 				ulong points1 = ulong.Parse(split1[1]);
 				ulong points2 = ulong.Parse(split2[1]);
@@ -267,7 +266,7 @@ namespace SnowyBot.Database
 			{
 				if (guild.ChangelogID == 0)
 					continue;
-				ITextChannel channel = channels.Where(x => x.Id == guild.ChangelogID).FirstOrDefault();
+				ITextChannel channel = channels.Find(x => x.Id == guild.ChangelogID);
 				if (channel == null)
 					continue;
 				try

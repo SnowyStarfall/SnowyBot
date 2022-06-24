@@ -1,6 +1,6 @@
 ﻿namespace SnowyBot
 {
-	public static partial class SnowyBotUtils
+	public static partial class Utilities
 	{
 		public static readonly string SnowyButton = "<:SnowyButton:929698740757995540>";
 		public static readonly string SnowyPlay = "<:SnowyPlay:929698740669935636>";

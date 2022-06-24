@@ -11,11 +11,15 @@ namespace SnowyBot.Modules
 {
 	public class FunModule : ModuleBase
 	{
+		public Random random;
 		public readonly Guilds guilds;
-		public FunModule(Guilds _guilds) => guilds = _guilds;
+		public FunModule(Guilds guilds)
+		{
+			this.guilds = guilds;
+			random = new();
+		}
 
-		public Random random = new();
-
+		// Info
 		[Command("Info")]
 		[Alias(new string[] { "Server", "Guild" })]
 		public async Task Info()
@@ -30,7 +34,7 @@ namespace SnowyBot.Modules
 				else
 					numUsers++;
 			}
-			EmbedBuilder builder = new EmbedBuilder();
+			EmbedBuilder builder = new();
 			builder.WithTitle($"{context.Guild.Name}");
 			builder.WithThumbnailUrl(context.Guild.IconUrl);
 			builder.WithDescription($"{context.Guild.Description}");
@@ -48,6 +52,7 @@ namespace SnowyBot.Modules
 			builder.WithFooter("Created by SnowyStarfall - Snowy#0364", context.Client.CurrentUser.GetAvatarUrl());
 			await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 		}
+
 		[Command("Feedback")]
 		public async Task Feedback([Remainder] string feedback)
 		{
@@ -60,8 +65,39 @@ namespace SnowyBot.Modules
 			await channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 			await Context.Channel.SendMessageAsync("Your feedback has been given to Snowy.");
 		}
+
+		// Utility
+		[Command("Poll")]
+		[RequireUserPermission(GuildPermission.ManageMessages)]
+		public async Task Poll()
+		{
+			if (Context.Message.ReferencedMessage == null)
+				return;
+
+			Emoji yes = Emoji.Parse("✅");
+			Emoji no = Emoji.Parse("❌");
+			await Context.Message.ReferencedMessage.AddReactionsAsync(new Emoji[2] { yes, no }).ConfigureAwait(false);
+
+			try { await Context.Message.DeleteAsync().ConfigureAwait(false); }
+			catch { }
+		}
+
+		[Command("Timestamp")]
+		public async Task Timestamp([Remainder] string timestamp)
+		{
+			bool parsed = DateTime.TryParse(timestamp, out DateTime result);
+			if (!parsed)
+			{
+				await Context.Channel.SendMessageAsync("Incorrect time format.");
+				return;
+			}
+			long unix = ((DateTimeOffset)result).ToUnixTimeSeconds();
+			await Context.Channel.SendMessageAsync("<t:" + unix + ":F>, Raw: \\<t:" + unix + ":F>");
+		}
+
+		// Memes
 		[Command("Question")]
-		public async Task Question([Remainder] string question = null)
+		public async Task Question([Remainder] string sentence)
 		{
 			Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
 			int choice = random.Next(0, 101);
@@ -70,6 +106,7 @@ namespace SnowyBot.Modules
 			else
 				await Context.Message.ReplyAsync(choice == 0 ? "NOH" : choice >= 1 && choice <= 11 ? "yeh" : choice >= 12 && choice <= 99 ? "noh" : "why are you gae").ConfigureAwait(false);
 		}
+
 		[Command("Snort")]
 		public async Task Snort()
 		{
@@ -95,9 +132,10 @@ namespace SnowyBot.Modules
 			await Context.Channel.SendMessageAsync($"-{markdownStr}{sizeStr}{new string(markdownStr.ToCharArray().Reverse().ToArray())}-").ConfigureAwait(false);
 			await Context.Message.DeleteAsync().ConfigureAwait(false);
 		}
+
 		[Command("8ball")]
 		[Alias(new string[] { "8" })]
-		public async Task EightBall([Remainder] string question)
+		public async Task EightBall([Remainder] string sentence)
 		{
 			Console.WriteLine($"{Context.Message.Author.Username}#{Context.Message.Author.Discriminator} : {Context.Message.Author.Id} in {Context.Guild.Name} : {Context.Guild.Id}");
 			int type = random.Next(0, 2);
@@ -108,6 +146,7 @@ namespace SnowyBot.Modules
 												"Don't count on it.", "My reply is no.", "My sources say no.", "Outlook not so good.", "Very doubtful."};
 			await Context.Message.ReplyAsync($"{responses[response]}").ConfigureAwait(false);
 		}
+
 		[Command("A")]
 		[Alias(new string[] { "Screm" })]
 		public async Task A([Remainder] string letter)
@@ -132,6 +171,7 @@ namespace SnowyBot.Modules
 
 			await Context.Message.ReplyAsync(reply).ConfigureAwait(false);
 		}
+
 		[Command("ratewaifu")]
 		[Alias(new string[] { "Rate", "Waifu" })]
 		public async Task RateWaifu([Remainder] string mention = null)
@@ -181,15 +221,10 @@ namespace SnowyBot.Modules
 				return;
 			}
 		}
+
 		[Command("Jumbo")]
 		public async Task Jumbo([Remainder] string emoji = null)
 		{
-			bool valid2 = Emote.TryParse(emoji, out var emote2);
-			if (valid2)
-			{
-				await Context.Channel.SendMessageAsync(emote2.Url).ConfigureAwait(false);
-				return;
-			}
 			if (Context.Message.ReferencedMessage != null)
 			{
 				bool valid1 = Emote.TryParse(Context.Message.ReferencedMessage.Content, out var emote1);
@@ -199,7 +234,14 @@ namespace SnowyBot.Modules
 					return;
 				}
 			}
+			bool valid2 = Emote.TryParse(emoji, out var emote2);
+			if (valid2)
+			{
+				await Context.Channel.SendMessageAsync(emote2.Url).ConfigureAwait(false);
+				return;
+			}
 		}
+
 		[Command("Awoo")]
 		public async Task Awoo()
 		{
@@ -213,6 +255,7 @@ namespace SnowyBot.Modules
 
 			await Context.Channel.SendMessageAsync(awoo).ConfigureAwait(false);
 		}
+
 		[Command("Roll")]
 		public async Task Roll([Remainder] string dice)
 		{
@@ -237,18 +280,20 @@ namespace SnowyBot.Modules
 			result = result.Remove(result.Length - 2, 2);
 			await Context.Channel.SendMessageAsync($"{Context.User.Mention}  :game_die:\n**Result**: {dice.Replace("-", "").ToLower()} ({result})\n**Total**: {value}");
 		}
+
 		[Command("Inflate")]
 		public async Task Inflate([Remainder] string mention = null)
 		{
 			try { await Context.Message.DeleteAsync().ConfigureAwait(false); }
 			catch { }
-			if (mention == DiscordService.Snowy.Mention)
+			if (mention == DiscordGlobal.Snowy.Mention)
 			{
 				await Context.Channel.SendMessageAsync($"*inflates {Context.Message.Author.Mention} making them big and round*").ConfigureAwait(false);
 				return;
 			}
 			await Context.Channel.SendMessageAsync($"*inflates {mention} making them big and round*").ConfigureAwait(false);
 		}
+
 		[Command("Scramble")]
 		public async Task Scramble([Remainder] string sentence = null)
 		{
@@ -260,16 +305,13 @@ namespace SnowyBot.Modules
 				return;
 			string[] split = sentence.Split(' ');
 			List<string> list = new();
-			foreach (string s in split)
-				list.Add(s);
+			list.AddRange(split);
 			int n = list.Count;
 			while (n > 1)
 			{
 				n--;
 				int k = random.Next(n + 1);
-				string value = list[k];
-				list[k] = list[n];
-				list[n] = value;
+				(list[n], list[k]) = (list[k], list[n]);
 			}
 			string result = "";
 			foreach (string s in list)
@@ -279,42 +321,24 @@ namespace SnowyBot.Modules
 			builder.WithDescription(result);
 			await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 		}
-		[Command("FormatGreentext")]
-		public async Task FormatGreentext([Remainder] string text)
-		{
-			EmbedBuilder builder = new();
-			text = text.Replace(">", "\n>");
-			builder.WithColor(new Color(0xcc70ff));
-			builder.WithDescription(text);
-			await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
-		}
-		[Command("Timestamp")]
-		public async Task Timestamp([Remainder] string timestamp)
-		{
-			bool parsed = DateTime.TryParse(timestamp, out DateTime result);
-			if (!parsed)
-			{
-				await Context.Channel.SendMessageAsync("Incorrect time format.");
-				return;
-			}
-			long unix = ((DateTimeOffset)result).ToUnixTimeSeconds();
-			await Context.Channel.SendMessageAsync("<t:" + unix + ":F>, Raw: \\<t:" + unix + ":F>");
-		}
+
 		[Command("Kojimafy")]
-		public async Task Kojimafy([Remainder] string words = null)
+		public async Task Kojimafy([Remainder] string sentence = null)
 		{
-			if (Context.Message.ReferencedMessage != null)
-				words = Context.Message.ReferencedMessage.Content;
-			if (words == null && Context.Message.ReferencedMessage == null)
+			if (sentence == null && Context.Message.ReferencedMessage?.Embeds?.Count > 0)
+				sentence = Context.Message.ReferencedMessage.Embeds.First().Description;
+			if (sentence == null && Context.Message.ReferencedMessage != null)
+				sentence = Context.Message.ReferencedMessage.Content;
+			if (sentence == null && Context.Message.ReferencedMessage == null)
 				return;
-			List<string> wordList = words.Split(' ').ToList();
-			if (wordList.Count < 1)
+			List<string> words = sentence.Split(' ').ToList();
+			if (words.Count < 1)
 				return;
-			if (wordList.Count % 2 != 0)
-				wordList.RemoveAt(wordList.Count - 1);
+			if (words.Count % 2 != 0)
+				words.RemoveAt(words.Count - 1);
 			int pair = 0;
 			string result = "";
-			foreach (string word in wordList)
+			foreach (string word in words)
 			{
 				if (pair == 1)
 				{
@@ -330,47 +354,5 @@ namespace SnowyBot.Modules
 			builder.WithDescription(result);
 			await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
 		}
-		[Command("Longembed")]
-		public async Task LongEmbed()
-		{
-			string result = "";
-			for (int i = 0; i < 4094; i++)
-				result += i == 0 ? "A\n" : i == 4093 ? "A\n" : "\n";
-			EmbedBuilder builder = new();
-			builder.WithColor(new Color(0xcc70ff));
-			builder.WithDescription(result);
-			await Context.Channel.SendMessageAsync(null, false, builder.Build()).ConfigureAwait(false);
-			//string fieldTitle = "";
-			//string fieldDesc = "";
-			//for (int i = 0; i < 254; i++)
-			//  fieldTitle += i == 0 ? "A\n" : i == 254 ? "A\n" : "\n";
-			//for (int i = 0; i < 254; i++)
-			//  fieldDesc += i == 0 ? "A\n" : i == 254 ? "A\n" : "\n";
-
-			//try
-			//{
-			//  for (int i = 0; i < 7; i++)
-			//  {
-			//    if (i != 6)
-			//    {
-			//      builder.AddField(fieldTitle, "A", false);
-
-			//      continue;
-			//    }
-			//    builder.AddField(fieldTitle, "A", false);
-			//  }
-			//}
-			//catch (Exception ex)
-			//{
-			//  Console.Write(ex);
-			//}
-		}
-		[Command("PotionSeller")]
-		[Alias(new[] { "StrongestPotions" })]
-		public async Task PotionSeller()
-		{
-			await Context.Channel.SendMessageAsync("https://www.youtube.com/watch?v=-6QifNVcxbA").ConfigureAwait(false);
-		}
-
 	}
 }

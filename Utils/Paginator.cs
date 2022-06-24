@@ -1,24 +1,25 @@
 ﻿using Discord;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using static SnowyBot.SnowyBotUtils;
+using static SnowyBot.Utilities;
 
-
-namespace SnowyBot.Utilities
+namespace SnowyBot
 {
 	public class Paginator
 	{
-		private readonly List<Embed> pages;
-		private readonly IUserMessage message;
+		public readonly List<Embed> pages;
+		public readonly IUserMessage message;
+		public ComponentBuilder builder;
 		public string[] componentData;
-		private ComponentBuilder builder;
 		public readonly int count;
 		public int page;
-		public Paginator(List<Embed> _embeds, IUserMessage _message, string[] _componentData)
+		public int timer;
+		public Paginator(List<Embed> embeds, IUserMessage message, string[] componentData, int timer)
 		{
-			pages = _embeds;
-			message = _message;
-			componentData = _componentData;
+			pages = embeds;
+			this.message = message;
+			this.componentData = componentData;
+			this.timer = timer;
 			count = pages.Count;
 			builder = new();
 		}
@@ -72,7 +73,7 @@ namespace SnowyBot.Utilities
 				p.Embed = pages[page + 3 < pages.Count - 1 ? page + 3 : pages.Count - 1];
 				builder.WithButton(null, componentData[0], ButtonStyle.Secondary, Emote.Parse(SnowyRewind));
 				builder.WithButton(null, componentData[1], ButtonStyle.Secondary, Emote.Parse(SnowyPlayBackwards));
-				if (!(page + 3 >= count - 1))
+				if (page + 3 < count - 1)
 				{
 					builder.WithButton(null, componentData[2], ButtonStyle.Secondary, Emote.Parse(SnowyPlay));
 					builder.WithButton(null, componentData[3], ButtonStyle.Secondary, Emote.Parse(SnowyFastForward));
@@ -89,7 +90,7 @@ namespace SnowyBot.Utilities
 			await message.ModifyAsync((MessageProperties p) =>
 			{
 				p.Embed = pages[page - 3 < 0 ? 0 : page - 3];
-				if (!(page - 3 <= 1))
+				if (page - 3 > 1)
 				{
 					builder.WithButton(null, componentData[0], ButtonStyle.Secondary, Emote.Parse(SnowyRewind));
 					builder.WithButton(null, componentData[1], ButtonStyle.Secondary, Emote.Parse(SnowyPlayBackwards));
